@@ -6,7 +6,6 @@ import logging
 from collections import defaultdict
 import argparse
 
-#from flask import Flask, request
 import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
@@ -411,9 +410,6 @@ def process(code: str, model, tokenizer, device):
 # Raw IDA decompiled code pre-processing
 #
 
-def read_file(filename):
-    with open(filename, 'r') as r:
-        return r.read()
 
 def rm_comments(func):
 
@@ -421,28 +417,6 @@ def rm_comments(func):
     cm_func = re.sub(cm_regex, ' ', func)
 
     return cm_func
-
-
-# def find_dec_vars(lines):
-
-#     # use regex
-#     regex = r"(\w+\d{0,6});"
-#     res = re.findall(regex, lines)
-#     return res
-
-
-
-# def find_args(lines):
-
-#     all_args = []
-#     # https://stackoverflow.com/questions/476173/regex-to-pull-out-c-function-prototype-declarations
-#     regex = r'^([\w\*]+( )*?){2,}\(([^!@#$+%^;]+?)\)(?!\s*;)'
-#     res = re.search(regex, lines)
-#     if res:
-#         tmp_args = res.group(3).split(',')
-#         for ta in tmp_args:
-#             all_args.append(ta.split(' ')[-1].strip('*'))
-#     return all_args
 
 
 def find_dwaf_decompiler_vars(all_vars):
@@ -462,48 +436,6 @@ def random_str(n: int):
     charset = string.ascii_lowercase + string.digits
     return "varid_" + "".join([random.choice(charset) for _ in range(n)])
 
-
-
-# def preprocess_ida_raw_code(func: str):
-
-#     # rm comments
-#     func = rm_comments(func)
-#     func_sign = func.split('{')[0]
-#     func_body = '{'.join(func.split('{')[1:])
-
-#     # find variables
-#     varlines_bodylines = func_body.strip("\n").split('\n\n')
-#     if len(varlines_bodylines) >= 2:
-#         var_dec_lines = varlines_bodylines[0]
-#         func_dec_vars = find_dec_vars(var_dec_lines)
-#     else:
-#         func_dec_vars = []
-
-#     # find arg
-#     func_args = find_args(func_sign)
-
-#     all_vars = func_args + func_dec_vars
-#     print(f"all vars: {all_vars}")
-
-#     # categorize variables
-#     dwarf, ida_gen = find_dwaf_decompiler_vars(all_vars)
-#     print(f"dwarf: {dwarf} \nida_gen: {ida_gen}")
-
-#     # pre-process variables and replace them with "@@var_name@@random_id@@"
-#     varname2token = {}
-#     for varname in all_vars:
-#         varname2token[varname] = f"@@{varname}@@{random_str(6)}@@"
-#     new_func = func
-   
-#     # this is a poor man's parser lol
-#     allowed_prefixes = [" ", "&", "(", "*", "++", "--", ")"]
-#     allowed_suffixes = [" ", ")", ",", ";", "["]
-#     for varname, newname in varname2token.items():
-#         for p in allowed_prefixes:
-#             for s in allowed_suffixes:
-#                 new_func = new_func.replace(f"{p}{varname}{s}", f"{p}{newname}{s}")
-#     # print(new_func)
-#     return new_func, func_args
 
 def preprocess_binsync_raw_code(func: str, local_vars: list, func_args: list):
 
@@ -602,16 +534,9 @@ def replace_varnames_in_code(processed_code: str, func_args, names, origins, pre
 
 
 
-EXAMPLE_FUNCTIONS = {
-}
-example_func_path = os.path.join(BASEDIR, "data.json")
-if os.path.isfile(example_func_path):
-    with open(example_func_path, "r") as f:
-        EXAMPLE_FUNCTIONS = json.load(f)
-
 
 BINSYNC_FUNCTIONS = []
-binsync_funcs_path = os.path.join(BASEDIR, "binsync_data.json")
+binsync_funcs_path = os.path.join(BASEDIR, "data", "binsync_data.json")
 if os.path.isfile(binsync_funcs_path):
     with open(binsync_funcs_path, "r") as f:
         BINSYNC_FUNCTIONS = f.readlines()
@@ -620,9 +545,6 @@ if os.path.isfile(binsync_funcs_path):
 def predict(args):
 
     model_name = args.decompiler.lower()
-    
-    #TODO: replace with func(s) from binsync
-    # code_funcs = {EXAMPLE_FUNCTIONS['ida-O0-1']}
   
     # model initialization
     model_dir = os.path.join(BASEDIR,  "models", MODELS[model_name])
@@ -639,7 +561,6 @@ def predict(args):
 
     # prediction
     for func in BINSYNC_FUNCTIONS:
-        # print(func)
         func = json.loads(func)
         raw_code = func['raw_code']
         local_vars = func['local_vars']
@@ -652,54 +573,10 @@ def predict(args):
             scores = "Unparsable code or input exceeding maximum length"
         predicted_code, orig_name_2_popular_name = replace_varnames_in_code(processed_code, func_args, scores, score_origins,
                                                   predict_for_decompiler_generated_vars=predict_for_decompiler_generated_vars)
-        # resp["model"] = model_name
-        # resp["processed_code"] = processed_code
-        # resp["name_predicted_code"] = predicted_code
-        # resp["names"] = scores
-        # resp["origins"] = score_origins
+
         resp['original_to_pred'] = orig_name_2_popular_name
 
         print(f"original to predicted variables: {resp['original_to_pred']}")
-
-def predict_old(args):
-
-    model_name = args.decompiler
-    
-    #TODO: replace with func(s) from binsync
-    code_funcs = {EXAMPLE_FUNCTIONS['ida-O0-1']}
-  
-    # model initialization
-    model_dir = os.path.join(BASEDIR,  "models", MODELS[model_name])
-    if not os.path.isdir(model_dir):
-        return {"response": f"Model {model_name} does not exist on the file system.", "statuscode": 400}, 200
-
-    predict_for_decompiler_generated_vars = "false"
-    predict_for_decompiler_generated_vars = predict_for_decompiler_generated_vars == "true"
-
-    g_model, g_tokenizer, g_device = varec_init(model_dir)
-    g_model.to(g_device)
-    if torch.cuda.is_available():
-        g_model.half()
-
-    # prediction
-    for raw_code in code_funcs:
-        resp = {}
-        # TODO: replace preprocess_ida_raw_code with preprocess_binsync_raw_code(raw_code, local_vars, func_args)
-        processed_code, func_args = preprocess_ida_raw_code(raw_code)
-        scores, score_origins = process(processed_code, g_model, g_tokenizer, g_device)
-        if scores is None:
-            scores = "Unparsable code or input exceeding maximum length"
-        predicted_code, orig_name_2_popular_name = replace_varnames_in_code(processed_code, func_args, scores, score_origins,
-                                                  predict_for_decompiler_generated_vars=predict_for_decompiler_generated_vars)
-        # resp["model"] = model_name
-        # resp["processed_code"] = processed_code
-        # resp["name_predicted_code"] = predicted_code
-        # resp["names"] = scores
-        # resp["origins"] = score_origins
-        resp['original_to_pred'] = orig_name_2_popular_name
-
-        print(f"original to predicted variables: {resp['original_to_pred']}")
-
 
 
 if __name__ == "__main__":
