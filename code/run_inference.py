@@ -6,7 +6,7 @@ import logging
 from collections import defaultdict
 import argparse
 
-from flask import Flask, request
+#from flask import Flask, request
 import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
@@ -423,26 +423,26 @@ def rm_comments(func):
     return cm_func
 
 
-def find_dec_vars(lines):
+# def find_dec_vars(lines):
 
-    # use regex
-    regex = r"(\w+\d{0,6});"
-    res = re.findall(regex, lines)
-    return res
+#     # use regex
+#     regex = r"(\w+\d{0,6});"
+#     res = re.findall(regex, lines)
+#     return res
 
 
 
-def find_args(lines):
+# def find_args(lines):
 
-    all_args = []
-    # https://stackoverflow.com/questions/476173/regex-to-pull-out-c-function-prototype-declarations
-    regex = r'^([\w\*]+( )*?){2,}\(([^!@#$+%^;]+?)\)(?!\s*;)'
-    res = re.search(regex, lines)
-    if res:
-        tmp_args = res.group(3).split(',')
-        for ta in tmp_args:
-            all_args.append(ta.split(' ')[-1].strip('*'))
-    return all_args
+#     all_args = []
+#     # https://stackoverflow.com/questions/476173/regex-to-pull-out-c-function-prototype-declarations
+#     regex = r'^([\w\*]+( )*?){2,}\(([^!@#$+%^;]+?)\)(?!\s*;)'
+#     res = re.search(regex, lines)
+#     if res:
+#         tmp_args = res.group(3).split(',')
+#         for ta in tmp_args:
+#             all_args.append(ta.split(' ')[-1].strip('*'))
+#     return all_args
 
 
 def find_dwaf_decompiler_vars(all_vars):
@@ -464,48 +464,51 @@ def random_str(n: int):
 
 
 
-def preprocess_ida_raw_code(func: str):
+# def preprocess_ida_raw_code(func: str):
+
+#     # rm comments
+#     func = rm_comments(func)
+#     func_sign = func.split('{')[0]
+#     func_body = '{'.join(func.split('{')[1:])
+
+#     # find variables
+#     varlines_bodylines = func_body.strip("\n").split('\n\n')
+#     if len(varlines_bodylines) >= 2:
+#         var_dec_lines = varlines_bodylines[0]
+#         func_dec_vars = find_dec_vars(var_dec_lines)
+#     else:
+#         func_dec_vars = []
+
+#     # find arg
+#     func_args = find_args(func_sign)
+
+#     all_vars = func_args + func_dec_vars
+#     print(f"all vars: {all_vars}")
+
+#     # categorize variables
+#     dwarf, ida_gen = find_dwaf_decompiler_vars(all_vars)
+#     print(f"dwarf: {dwarf} \nida_gen: {ida_gen}")
+
+#     # pre-process variables and replace them with "@@var_name@@random_id@@"
+#     varname2token = {}
+#     for varname in all_vars:
+#         varname2token[varname] = f"@@{varname}@@{random_str(6)}@@"
+#     new_func = func
+   
+#     # this is a poor man's parser lol
+#     allowed_prefixes = [" ", "&", "(", "*", "++", "--", ")"]
+#     allowed_suffixes = [" ", ")", ",", ";", "["]
+#     for varname, newname in varname2token.items():
+#         for p in allowed_prefixes:
+#             for s in allowed_suffixes:
+#                 new_func = new_func.replace(f"{p}{varname}{s}", f"{p}{newname}{s}")
+#     # print(new_func)
+#     return new_func, func_args
+
+def preprocess_binsync_raw_code(func: str, local_vars: list, func_args: list):
 
     # rm comments
     func = rm_comments(func)
-    func_sign = func.split('{')[0]
-    func_body = '{'.join(func.split('{')[1:])
-
-    # find variables
-    varlines_bodylines = func_body.strip("\n").split('\n\n')
-    if len(varlines_bodylines) >= 2:
-        var_dec_lines = varlines_bodylines[0]
-        func_dec_vars = find_dec_vars(var_dec_lines)
-    else:
-        func_dec_vars = []
-
-    # find arg
-    func_args = find_args(func_sign)
-
-    all_vars = func_args + func_dec_vars
-    print(f"all vars: {all_vars}")
-
-    # categorize variables
-    dwarf, ida_gen = find_dwaf_decompiler_vars(all_vars)
-    print(f"dwarf: {dwarf} \nida_gen: {ida_gen}")
-
-    # pre-process variables and replace them with "@@var_name@@random_id@@"
-    varname2token = {}
-    for varname in all_vars:
-        varname2token[varname] = f"@@{varname}@@{random_str(6)}@@"
-    new_func = func
-   
-    # this is a poor man's parser lol
-    allowed_prefixes = [" ", "&", "(", "*", "++", "--", ")"]
-    allowed_suffixes = [" ", ")", ",", ";", "["]
-    for varname, newname in varname2token.items():
-        for p in allowed_prefixes:
-            for s in allowed_suffixes:
-                new_func = new_func.replace(f"{p}{varname}{s}", f"{p}{newname}{s}")
-    # print(new_func)
-    return new_func, func_args
-
-def preprocess_binsync_raw_code(func: str, local_vars: list, func_args: list):
     
     all_vars =  func_args + local_vars
     print(f"all vars: {all_vars}")
@@ -704,7 +707,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--decompiler", help="Decompiler name to predict var names")
     args = parser.parse_args()
-    predict_old(args)
+    predict(args)
 
 
 
