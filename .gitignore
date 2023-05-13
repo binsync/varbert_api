@@ -161,4 +161,4 @@ cython_debug/
 
 
 # models are too big!
-varbert/models/
+models/
