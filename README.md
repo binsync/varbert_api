@@ -3,28 +3,28 @@ Predict variable names for your favorite decompiler.
 
 Model available for IDA. Ghidra coming soon!
 
-# Setup
+## Setup
 ```
  mkdir -p varbert/models
  Download and copy models to `varbert/models`
  pip install -r requirements.txt
 ```
 
-# Usage
+## Usage
 ```
 python run_inference.py --decompiler=<decompiler_name> --all
 decompiler_name: ida/IDA, ghidra/Ghidra
 all: To predict variable names for both source code variables and decompiler-generated variable names. (Default False) 
 ```
 
-# Example
-## Input 
+## Example
+### Input 
 ```
 {funcname: {raw_code: '', 'local_vars: [], 'args': []}}
 for now: (binsync_data.json)
 ```
-## Output 
-### `python run_inference.py --decompiler=ida --all`
+### Output 
+`python run_inference.py --decompiler=ida --all`
 ```
 original: predicted
 
@@ -39,7 +39,7 @@ original: predicted
  'v9': 'table'}
 ```
 
-### `python run_inference.py --decompiler=ida`
+`python run_inference.py --decompiler=ida`
 ```
 original: predicted
 
