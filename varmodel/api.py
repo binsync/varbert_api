@@ -4,7 +4,7 @@ import torch
 from typing import Optional
 
 from .data_loaders import BSDataLoader
-from .model import AVARInterface
+from .model import VARModelInterface
 
 from binsync.data import Function
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class VariableRenamingAPI:
     def __init__(self, decompiler="ida"):
         self._decompiler = decompiler
-        self._model_interface: Optional[AVARInterface] = None
+        self._model_interface: Optional[VARModelInterface] = None
 
     def predict_variable_names(self, function_text: str, function: Function) -> Optional[Function]:
         # init if not done earlier
@@ -63,4 +63,4 @@ class VariableRenamingAPI:
         return new_func if new_func != function else None
 
     def _init_model_interface(self):
-        self._model_interface = AVARInterface(decompiler=self._decompiler)
+        self._model_interface = VARModelInterface(decompiler=self._decompiler)

@@ -33,9 +33,9 @@ logger = logging.getLogger(__name__)
 VAR_SIZE = 2
 
 
-class AVARInterface:
+class VARModelInterface:
     def __init__(self, decompiler="ida"):
-        self.model_base_dir = Path(pkg_resources.resource_filename("AVAR", f"models/model_{decompiler}")).absolute()
+        self.model_base_dir = Path(pkg_resources.resource_filename("varmodel", f"models/model_{decompiler}")).absolute()
         if not self.model_base_dir.exists() or not self.model_base_dir.is_dir():
             logger.error("Failed to get the model data from resource packages. Did you install correctly?")
             return
@@ -68,8 +68,8 @@ class AVARInterface:
 
     @staticmethod
     def normalize(k):
-        if AVARInterface.is_camel_case(k):
-            k=AVARInterface.change_case(k)
+        if VARModelInterface.is_camel_case(k):
+            k=VARModelInterface.change_case(k)
         else:
             k=k.lower()
         return k
@@ -133,7 +133,7 @@ class AVARInterface:
         return r
 
     def preprocess_word_mask(self, ftext, tokenizer):
-        words = AVARInterface.split_words(ftext)
+        words = VARModelInterface.split_words(ftext)
         pwords = []
         tpwords = []
         owords = []
@@ -156,7 +156,7 @@ class AVARInterface:
                 post_var = splits[-1]
 
                 assert len(variable_word) > 0
-                norm_variable_word = AVARInterface.normalize(variable_word)
+                norm_variable_word = VARModelInterface.normalize(variable_word)
                 var_tokens = self.get_var_token(norm_variable_word)
                 masked_words = ["<mask>"] * len(var_tokens)
                 var_toks.append(var_tokens)

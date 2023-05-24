@@ -1,7 +1,7 @@
 import unittest
 import sys
 
-from AVAR import VariableRenamingAPI
+from varmodel import VariableRenamingAPI
 from binsync.data import Function, FunctionArgument, FunctionHeader, StackVariable
 
 
