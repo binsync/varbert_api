@@ -1,34 +1,66 @@
 import logging
 import argparse
 import torch
+from typing import Optional
 
 from .data_loaders import BSDataLoader
 from .model import AVARInterface
 
+from binsync.data import Function
+
 logger = logging.getLogger(__name__)
 
 
-def init_model():
-    model_interface = AVARInterface()
-    g_model, g_tokenizer, g_device = model_interface.varec_init()
-    g_model.to(g_device)
-    if torch.cuda.is_available():
-        g_model.half()
+class VariableRenamingAPI:
+    def __init__(self, decompiler="ida"):
+        self._decompiler = decompiler
+        self._model_interface: Optional[AVARInterface] = None
 
-    return model_interface, g_model, g_tokenizer, g_device
+    def predict_variable_names(self, function_text: str, function: Function) -> Optional[Function]:
+        # init if not done earlier
+        if self._model_interface is None:
+            self._init_model_interface()
 
-# def binsync_predict(model_interface, model, tokenizer, device, decompilation, Function):
-def binsync_predict(model_interface, model, tokenizer, device, decompilation, local_vars, args):
-    bsloader = BSDataLoader(
-        decompilation,
-        local_vars, # Function.stack_vars,
-        args # Function.args,
-    )
+        # places all important names in list format
+        local_vars = [lvar.name for lvar in function.stack_vars.values()] if function.stack_vars else []
+        func_args = [arg.name for arg in function.args.values()] if function.args else []
 
-    processed_code, func_args = bsloader.preprocess_binsync_raw_code()
-    scores, score_origins = model_interface.process(processed_code, model, tokenizer, device)
-    if scores is None:
-        scores = "Unparsable code or input exceeding maximum length"
-    predicted_code, orig_name_2_popular_name = bsloader.replace_varnames_in_code(processed_code, func_args, scores, score_origins,
-                                            predict_for_decompiler_generated_vars=False)
-    return orig_name_2_popular_name
+        # pre-format text for training
+        bsloader = BSDataLoader(
+            function_text,
+            local_vars,
+            func_args
+        )
+        processed_code, func_args = bsloader.preprocess_binsync_raw_code()
+
+        scores, score_origins = self._model_interface.process(processed_code)
+        if scores is None:
+            scores = "Unparsable code or input exceeding maximum length"
+
+        predicted_code, orig_name_2_popular_name = bsloader.replace_varnames_in_code(
+            processed_code, func_args, scores, score_origins,
+            predict_for_decompiler_generated_vars=False
+        )
+        if not orig_name_2_popular_name:
+            logger.warning(f"Unable to predict any names for function {function}")
+            return None
+
+        # apply changes to the function
+        new_func: Function = function.copy()
+        for orig_name, pop_name in orig_name_2_popular_name.items():
+            # skip all variables that are decompiler name predicted
+            if "/*decompiler*/" in pop_name:
+                continue
+            
+            for offset, svar in function.stack_vars.items():
+                if svar.name == orig_name:
+                    new_func.stack_vars[offset].name = pop_name
+
+            for offset, arg in function.args.items():
+                if arg.name == orig_name:
+                    new_func.args[offset].name = pop_name
+
+        return new_func if new_func != function else None
+
+    def _init_model_interface(self):
+        self._model_interface = AVARInterface(decompiler=self._decompiler)

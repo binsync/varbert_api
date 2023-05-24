@@ -34,8 +34,8 @@ VAR_SIZE = 2
 
 
 class AVARInterface:
-    def __init__(self):
-        self.model_base_dir = Path(pkg_resources.resource_filename("AVAR", "models/model_ida")).absolute()
+    def __init__(self, decompiler="ida"):
+        self.model_base_dir = Path(pkg_resources.resource_filename("AVAR", f"models/model_{decompiler}")).absolute()
         if not self.model_base_dir.exists() or not self.model_base_dir.is_dir():
             logger.error("Failed to get the model data from resource packages. Did you install correctly?")
             return
@@ -46,6 +46,16 @@ class AVARInterface:
 
         self.word_to_idx = dict((v, k) for (k, v) in self.idx_to_word.items())
         self.vocab_size = len(self.idx_to_word) + 1
+
+        self.g_model, self.g_tokenizer, self.g_device = self.init_model()
+
+    def init_model(self):
+        g_model, g_tokenizer, g_device = self.varec_init()
+        g_model.to(g_device)
+        if torch.cuda.is_available():
+            g_model.half()
+
+        return g_model, g_tokenizer, g_device
 
     @staticmethod
     def change_case(strt):
@@ -206,7 +216,7 @@ class AVARInterface:
 
     def get_inferences(self, input_ids, tokenizer, model, device):
         input_ids = torch.tensor(input_ids)
-        print("Input length of each slice", len(input_ids))
+        logger.debug("Input length of each slice" + str(len(input_ids)))
         only_masked = input_ids == tokenizer.mask_token_id
         outputs = model(input_ids.to(device).unsqueeze(0))
         varname_out = outputs[0]
@@ -230,7 +240,7 @@ class AVARInterface:
                     predicted_vars.append({"pred_name": varname, "pred_idx": varidx, "confidence": var_score})
                 all_p_vars.append({"pred_name": varname, "pred_idx": varidx, "confidence": var_score})
             predicted_vars[-1]["top-k"] = all_p_vars
-        print("Prediction Length of each slice :", len(predicted_vars))
+        logger.debug("Prediction Length of each slice :" + str(len(predicted_vars)))
 
         type_dict = {0: 'Dwarf',
                      1: 'Decompiler'}
@@ -253,7 +263,10 @@ class AVARInterface:
     __int64 __fastcall crypt_init_by_name(__int64 @@var_1@@cd@@, __int64 @@var_2@@name@@)\n{\n  return crypt_init_by_name_and_header(@@var_1@@cd@@, @@var_2@@name@@, 0LL);\n}\n
     """
 
-    def process(self, code: str, model, tokenizer, device):
+    def process(self, code: str):
+        model = self.g_model
+        tokenizer = self.g_tokenizer
+        device = self.g_device
 
         _code = code
         _code = _code.replace("\n", " ")
@@ -275,7 +288,7 @@ class AVARInterface:
         preds = []
         preds_type = []
         n = 800
-        print(f"Got {len(input_ids_with_special_tokens)} input IDs.")
+        logger.debug(f"Got {len(input_ids_with_special_tokens)} input IDs.")
         # For those functions which are greater than 800 tokens we split them into chunks of 800 and predict the vars in those chunks
         input_chunks = [padded_input_ids[i:i + n] for i in range(0, len(padded_input_ids), n)]
         for each_chunk in input_chunks:
@@ -283,8 +296,8 @@ class AVARInterface:
             preds += each_chunk_preds
             preds_type += each_chunk_preds_type
 
-        print("Length of all slices pred:", len(preds))
-        print("Length of all slices pred:", len(preds_type))
+        logger.debug(f"Length of all slices pred: {len(preds)}")
+        logger.debug(f"Length of all slices pred: {len(preds_type)}")
         if not preds:
             return None, None
         return preds, preds_type
