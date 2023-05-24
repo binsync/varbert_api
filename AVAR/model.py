@@ -90,10 +90,10 @@ class AVARInterface:
 
         if torch.cuda.is_available():
             device = torch.device("cuda")
-            logger.info("GPU found, will use GPU for inference.")
+            logger.debug("GPU found, will use GPU for inference.")
         else:
             device = torch.device("cpu")
-            logger.warn("GPU not found, inference will be slower.")
+            logger.debug("GPU not found, inference will be slower.")
         n_gpu = torch.cuda.device_count()
         config_class, model_class, tokenizer_class = MODEL_CLASSES["roberta"]
 

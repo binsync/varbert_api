@@ -62,7 +62,6 @@ class BSDataLoader:
         funcargs_in_varid = set()
         varid2holder = {}
         orig_name_2_popular_name = {}
-        print(len(all_holders), "\n", len(names))
         
         if len(all_holders) != len(names):
             return "// Error: Unexpected number of variable name holders versus variable names."
