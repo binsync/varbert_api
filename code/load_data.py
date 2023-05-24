@@ -10,11 +10,14 @@ logger = logging.getLogger(__name__)
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 
 class BSDataLoader:
-    def __init__(self, data, decompiler) -> None:
-        self.raw_code = data['raw_code']
-        self.local_vars = data['local_vars']
-        self.func_args = data['args']
-        self.decompiler = decompiler
+    def __init__(self, raw_code, local_vars, args,  decompiler) -> None:
+        # self.raw_code = data['raw_code']
+        # self.local_vars = data['local_vars']
+        # self.func_args = data['args']
+        self.raw_code = raw_code
+        self.local_vars = local_vars
+        self.func_args = args
+       
         #TODO: update this to interact with binsync
     
     def rm_comments(self):
