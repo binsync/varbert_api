@@ -17,12 +17,12 @@ def init_model():
 
     return model_interface, g_model, g_tokenizer, g_device
 
-
-def binsync_predict(model_interface, model, tokenizer, device, decompilation, Function):
+# def binsync_predict(model_interface, model, tokenizer, device, decompilation, Function):
+def binsync_predict(model_interface, model, tokenizer, device, decompilation, local_vars, args):
     bsloader = BSDataLoader(
         decompilation,
-        Function.stack_vars,
-        Function.args
+        local_vars, # Function.stack_vars,
+        args # Function.args,
     )
 
     processed_code, func_args = bsloader.preprocess_binsync_raw_code()

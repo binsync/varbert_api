@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 
 class BSDataLoader:
-    def __init__(self, raw_code, local_vars, args,  decompiler) -> None:
+    def __init__(self, raw_code, local_vars, args) -> None:
         # self.raw_code = data['raw_code']
         # self.local_vars = data['local_vars']
         # self.func_args = data['args']

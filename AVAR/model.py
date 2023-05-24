@@ -40,7 +40,7 @@ class AVARInterface:
             logger.error("Failed to get the model data from resource packages. Did you install correctly?")
             return
 
-        self.out_vocab_map = self.model_base_dir / "ida_to_word.json"
+        self.out_vocab_map = self.model_base_dir / "idx_to_word.json"
         with open(self.out_vocab_map, "r") as fp:
             self.idx_to_word = json.load(fp)
 
@@ -90,9 +90,10 @@ class AVARInterface:
         config = config_class.from_pretrained(self.model_base_dir)
         tokenizer = tokenizer_class.from_pretrained(self.model_base_dir)
         model = model_class.from_pretrained(
-            self.model_base_dir,
+            str(self.model_base_dir),
+            avar_vocab_size = self.vocab_size,
             from_tf=False,
-            config=config,
+            config=config            
         )
 
         model.to(device)
@@ -146,7 +147,7 @@ class AVARInterface:
 
                 assert len(variable_word) > 0
                 norm_variable_word = AVARInterface.normalize(variable_word)
-                var_tokens = AVARInterface.get_var_token(norm_variable_word)
+                var_tokens = self.get_var_token(norm_variable_word)
                 masked_words = ["<mask>"] * len(var_tokens)
                 var_toks.append(var_tokens)
                 prefix = ""
@@ -290,7 +291,7 @@ class AVARInterface:
 
 
 class RobertaLMHead2(nn.Module):
-    def __init__(self,config, avar_vocab_size):
+    def __init__(self,config, avar_vocab_size=None):
         super().__init__()
         self.avar_vocab_size = avar_vocab_size
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
@@ -313,7 +314,7 @@ class RobertaLMHead2(nn.Module):
 
 
 class RobertaLMHead3(nn.Module):
-    def __init__(self, config, avar_vocab_size):
+    def __init__(self, config, avar_vocab_size=None):
         super().__init__()
         self.avar_vocab_size = avar_vocab_size
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
@@ -336,11 +337,11 @@ class RobertaLMHead3(nn.Module):
 
 
 class RobertaForMaskedLMv2(RobertaForMaskedLM):
-    def __init__(self, config, avar_vocab_size):
+    def __init__(self, config, avar_vocab_size=None):
         super().__init__(config)
         self.avar_vocab_size = avar_vocab_size
-        self.lm_head2 = RobertaLMHead2(config, avar_vocab_size)
-        self.lm_head3 = RobertaLMHead3(config, avar_vocab_size)
+        self.lm_head2 = RobertaLMHead2(config, avar_vocab_size=avar_vocab_size)
+        self.lm_head3 = RobertaLMHead3(config, avar_vocab_size=avar_vocab_size)
         self.init_weights()
 
     def forward(
