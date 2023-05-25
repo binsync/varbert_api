@@ -10,13 +10,10 @@ logger = logging.getLogger(__name__)
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 
 class BSDataLoader:
-    def __init__(self, raw_code, local_vars, args) -> None:
-        # self.raw_code = data['raw_code']
-        # self.local_vars = data['local_vars']
-        # self.func_args = data['args']
+    def __init__(self, raw_code) -> None:
         self.raw_code = raw_code
-        self.local_vars = local_vars
-        self.func_args = args
+        self.local_vars = None
+        self.func_args = None
        
         #TODO: update this to interact with binsync
     
@@ -28,6 +25,57 @@ class BSDataLoader:
         charset = string.ascii_lowercase + string.digits
         return "varid_" + "".join([random.choice(charset) for _ in range(n)])
 
+
+    def find_local_vars(self, lines):
+        # use regex
+        regex = r"(\w+\d{0,6});"
+        res = re.findall(regex, lines)
+        return res
+
+    def find_func_args(self, lines):
+        all_args = []
+        # https://stackoverflow.com/questions/476173/regex-to-pull-out-c-function-prototype-declarations
+        regex = r'^([\w\*]+( )*?){2,}\(([^!@#$+%^;]+?)\)(?!\s*;)'
+        res = re.search(regex, lines)
+        if res:
+            tmp_args = res.group(3).split(',')
+            for ta in tmp_args:
+                all_args.append(ta.split(' ')[-1].strip('*'))
+        return all_args
+
+    def preprocess_ida_raw_code(self):
+        # rm comments
+        self.rm_comments()
+        func_sign = self.raw_code.split('{')[0]
+        func_body = '{'.join(self.raw_code.split('{')[1:])
+
+        # find variables
+        varlines_bodylines = func_body.strip("\n").split('\n\n')
+        if len(varlines_bodylines) >= 2:
+            var_dec_lines = varlines_bodylines[0]
+            self.local_vars = self.find_local_vars(var_dec_lines)
+        else:
+            self.local_vars = []
+
+        # find arg
+        self.func_args = self.find_func_args(func_sign)
+        all_vars = self.func_args + self.local_vars
+
+        # pre-process variables and replace them with "@@var_name@@random_id@@"
+        varname2token = {}
+        for varname in all_vars:
+            varname2token[varname] = f"@@{varname}@@{self.random_str(6)}@@"
+        new_func = self.raw_code
+    
+        # this is a poor man's parser lol
+        allowed_prefixes = [" ", "&", "(", "*", "++", "--", ")"]
+        allowed_suffixes = [" ", ")", ",", ";", "["]
+        for varname, newname in varname2token.items():
+            for p in allowed_prefixes:
+                for s in allowed_suffixes:
+                    new_func = new_func.replace(f"{p}{varname}{s}", f"{p}{newname}{s}")
+        
+        return new_func, self.func_args
 
     def preprocess_binsync_raw_code(self):
 
