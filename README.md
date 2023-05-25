@@ -1,5 +1,5 @@
-# VAR Model
-Predict variable names for your favorite decompiler with the Variable Annotation Recommendation Model! 
+# VARModel
+The Variable Annotation Recommendation Model! This work is directly relient on the VarBERT project.
 Model available for IDA. Ghidra coming soon!
 
 ## Setup
