@@ -22,16 +22,13 @@ class VariableRenamingAPI:
             self._init_model_interface()
 
         # places all important names in list format
-        local_vars = [lvar.name for lvar in function.stack_vars.values()] if function.stack_vars else []
-        func_args = [arg.name for arg in function.args.values()] if function.args else []
+        #local_vars = [lvar.name for lvar in function.stack_vars.values()] if function.stack_vars else []
+        #func_args = [arg.name for arg in function.args.values()] if function.args else []
 
         # pre-format text for training
         bsloader = BSDataLoader(
-            function_text,
-            local_vars,
-            func_args
-        )
-        processed_code, func_args = bsloader.preprocess_binsync_raw_code()
+            function_text)
+        processed_code, func_args = bsloader.preprocess_ida_raw_code()
 
         scores, score_origins = self._model_interface.process(processed_code)
         if scores is None:
