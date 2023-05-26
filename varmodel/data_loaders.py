@@ -44,10 +44,11 @@ class BSDataLoader:
     def find_func_args(self, lines):
         all_args = []
         # https://stackoverflow.com/questions/476173/regex-to-pull-out-c-function-prototype-declarations
-        regex = r'^([\w\*]+( )*?){2,}\(([^!@#$+%^;]+?)\)(?!\s*;)'
+        # regex = r'^([\w\*]+( )*?){2,}\(([^!@#$+%^;]+?)\)(?!\s*;)'
+        regex = r'\w+\s+(\w+)\s*\(([^)]*)\)'
         res = re.search(regex, lines)
         if res:
-            tmp_args = res.group(3).split(',')
+            tmp_args = res.group(2).split(',')
             for ta in tmp_args:
                 all_args.append(ta.split(' ')[-1].strip('*'))
         return all_args
@@ -77,8 +78,8 @@ class BSDataLoader:
         new_func = self.raw_code
     
         # this is a poor man's parser lol
-        allowed_prefixes = [" ", "&", "(", "*", "++", "--", ")"]
-        allowed_suffixes = [" ", ")", ",", ";", "["]
+        allowed_prefixes = [" ", "&", "(", "*", "++", "--", ")", "!"]
+        allowed_suffixes = [" ", ")", ",", ";", "[", "++", "--"]
         for varname, newname in varname2token.items():
             for p in allowed_prefixes:
                 for s in allowed_suffixes:
