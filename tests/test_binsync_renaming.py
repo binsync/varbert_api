@@ -30,6 +30,30 @@ class TestBinSyncRenaming(unittest.TestCase):
         assert new_function.stack_vars[3] != function.stack_vars[3]
         assert new_function.stack_vars[4] != function.stack_vars[4]
         assert new_function.stack_vars[5] != function.stack_vars[5]
+        
+    def test_renaming_1(self):
+        api = VariableRenamingAPI(decompiler="ida")
+
+        # testing text
+        function_text = "_int64 __fastcall main(int a1, char **a2, char **a3)\n{\n  _BOOL4 v4; // [rsp+1Ch] [rbp-24h] BYREF\n  char v5[16]; // [rsp+20h] [rbp-20h] BYREF\n  char buf[16]; // [rsp+30h] [rbp-10h] BYREF\n\n  buf[8] = 0;\n  v5[8] = 0;\n  puts(\"Username: \");\n  read(0, buf, 8uLL);\n  read(0, &v4, 1uLL);\n  puts(\"Password: \");\n  read(0, v5, 8uLL);\n  read(0, &v4, 1uLL);\n  v4 = sub_400664(buf, v5);\n  if ( !v4 )\n    sub_4006FD();\n  return sub_4006ED(buf);\n}\n"
+        svar_name_data = ['v4', 'v5', 'buf']
+        args_name_data = ["a1", "a2", "a3"]
+
+        # WARNING: the offsets that these stack variables have as BinSync objects are not real and are only for this testcase
+        function = Function(0xdead, 0x1337, header=FunctionHeader("main", 0xdead, args={}), stack_vars={})
+        for i, name in enumerate(svar_name_data):
+            function.stack_vars[i] = StackVariable(i, name, None, 8, function.addr)
+        for i, name in enumerate(args_name_data):
+            function.args[i] = FunctionArgument(i, name, None, 8)
+
+        new_function = api.predict_variable_names(function_text, function)
+        
+        assert new_function.args[0] != function.args[0]
+        assert new_function.args[1] != function.args[1]
+        assert new_function.args[2] != function.args[2]
+
+        assert new_function.stack_vars[1] != function.stack_vars[1]
+        assert new_function.stack_vars[2] != function.stack_vars[2]
 
 
 if __name__ == "__main__":

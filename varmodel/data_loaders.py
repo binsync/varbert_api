@@ -28,9 +28,18 @@ class BSDataLoader:
 
     def find_local_vars(self, lines):
         # use regex
-        regex = r"(\w+\d{0,6});"
-        res = re.findall(regex, lines)
-        return res
+        #regex = r"(\w+\d{0,6});"
+        local_vars = []
+        regex = r"(\w+(\[\d+\]|\d{0,6}));"
+        matches = re.finditer(regex, lines)
+        if matches:
+            for m in matches:
+                tmpvar = m.group(1)
+                if not tmpvar:
+                    continue
+                lv = tmpvar.split('[')[0]
+                local_vars.append(lv)
+        return local_vars
 
     def find_func_args(self, lines):
         all_args = []
