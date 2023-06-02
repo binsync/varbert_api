@@ -202,6 +202,7 @@ class VARModelInterface:
                     tpwords.append(vocab[t])
                     towords.append(vocab[t])
                     pos += 1
+        
         assert len(tpwords) == len(towords)
         assert None not in tpwords
         assert None not in towords
@@ -269,14 +270,14 @@ class VARModelInterface:
         device = self.g_device
 
         _code = code
-        _code = _code.replace("\n", " ")
-        # remove comments
-        _code_lines = _code.split("\n")
-        for idx, line in enumerate(_code_lines):
-            if "//" in line:
-                line = line[:line.index("//")]
-                _code_lines[idx] = line
-        _code = "\n".join(_code_lines)
+        # _code = _code.replace("\n", " ")
+        # # remove comments
+        # _code_lines = _code.split("\n")
+        # for idx, line in enumerate(_code_lines):
+        #     if "//" in line:
+        #         line = line[:line.index("//")]
+        #         _code_lines[idx] = line
+        # _code = "\n".join(_code_lines)
 
         input_ids = self.preprocess_word_mask(_code, tokenizer)[0]
         input_ids_with_special_tokens = tokenizer.build_inputs_with_special_tokens(input_ids)

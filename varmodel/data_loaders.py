@@ -25,7 +25,6 @@ class BSDataLoader:
         charset = string.ascii_lowercase + string.digits
         return "varid_" + "".join([random.choice(charset) for _ in range(n)])
 
-
     def find_local_vars(self, lines):
         # use regex
         #regex = r"(\w+\d{0,6});"
@@ -80,6 +79,7 @@ class BSDataLoader:
         # this is a poor man's parser lol
         allowed_prefixes = [" ", "&", "(", "*", "++", "--", ")", "!"]
         allowed_suffixes = [" ", ")", ",", ";", "[", "++", "--"]
+
         for varname, newname in varname2token.items():
             for p in allowed_prefixes:
                 for s in allowed_suffixes:
@@ -120,7 +120,7 @@ class BSDataLoader:
         funcargs_in_varid = set()
         varid2holder = {}
         orig_name_2_popular_name = {}
-        
+        # import ipdb; ipdb.set_trace()
         if len(all_holders) != len(names):
             return "// Error: Unexpected number of variable name holders versus variable names."
         if len(all_holders) != len(origins):
