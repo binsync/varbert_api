@@ -17,26 +17,33 @@ class BSDataLoader:
        
         #TODO: update this to interact with binsync
     
-    def rm_comments(self):
-        cm_regex = r'// .*'
-        self.raw_code = re.sub(cm_regex, '', self.raw_code)
+    # def rm_comments(self):
+    #     cm_regex = r'// .*'
+    #     self.raw_code = re.sub(cm_regex, '', self.raw_code)
+
+    def rm_comments(self):    
+        # Replace single-line comments with a newline
+        self.raw_code = re.sub(r'//.*', '', self.raw_code)            
+        # Replace multi-line comments with a single newline
+        self.raw_code = re.sub(r'/\*.*?\*/', '', self.raw_code, flags=re.DOTALL)
+   
 
     def random_str(self, n: int):        
         charset = string.ascii_lowercase + string.digits
         return "varid_" + "".join([random.choice(charset) for _ in range(n)])
 
     def find_local_vars(self, lines):
-        # use regex
-        #regex = r"(\w+\d{0,6});"
+
         local_vars = []
-        regex = r"(\w+(\[\d+\]|\d{0,6}));"
+        # regex = r"(\w+(\[\d+\]|\d{0,6}));"
+        regex = r"(\w+(\s?\[\d+\]|\d{0,6}));" # works for both ida and ghidra
         matches = re.finditer(regex, lines)
         if matches:
             for m in matches:
                 tmpvar = m.group(1)
                 if not tmpvar:
                     continue
-                lv = tmpvar.split('[')[0]
+                lv = tmpvar.split('[')[0].strip()
                 local_vars.append(lv)
         return local_vars
 
@@ -49,7 +56,7 @@ class BSDataLoader:
         if res:
             tmp_args = res.group(2).split(',')
             for ta in tmp_args:
-                all_args.append(ta.split(' ')[-1].strip('*'))
+                all_args.append(ta.split(' ')[-1].strip('*').strip())
         return all_args
 
     def preprocess_ida_raw_code(self):
