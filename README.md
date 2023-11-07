@@ -18,7 +18,7 @@ To use it programmatically, you must reference the API class:
 ```python
 from varmodel import VariableRenamingAPI
 
-api = VariableRenamingAPI(decompiler="ida")
+api = VariableRenamingAPI(decompiler_name="ida")
 api.predict_variable_names(function_text, binsync_function)
 ```
 Where `function_text` is the decompilation text and `binsync_function` is the `Function` you plan to have variables

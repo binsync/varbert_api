@@ -1,7 +1,7 @@
 import re
 import json
 import logging
-import pkg_resources
+import importlib.resources
 from pathlib import Path
 
 import torch
@@ -34,8 +34,8 @@ VAR_SIZE = 2
 
 
 class VARModelInterface:
-    def __init__(self, decompiler="ida"):
-        self.model_base_dir = Path(pkg_resources.resource_filename("varmodel", f"models/model_{decompiler}")).absolute()
+    def __init__(self, decompiler="ghidra"):
+        self.model_base_dir = Path(str(importlib.resources.files("varmodel"))).joinpath(f"models/{decompiler}").absolute()
         if not self.model_base_dir.exists() or not self.model_base_dir.is_dir():
             logger.error("Failed to get the model data from resource packages. Did you install correctly?")
             return

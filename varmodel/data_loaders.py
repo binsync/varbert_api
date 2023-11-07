@@ -1,36 +1,52 @@
 import re
 import os
-import json
 import logging
 from collections import defaultdict
-import argparse
 import random, string
+from typing import Optional, Dict
 
-logger = logging.getLogger(__name__)
+from yodalib.api import DecompilerInterface
+from yodalib.data import Function
+
+_l = logging.getLogger(__name__)
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 
-class BSDataLoader:
-    def __init__(self, raw_code) -> None:
+
+class DecompilationTextPreprocessor:
+    def __init__(self, raw_code, func: Optional[Function] = None, decompiler: Optional[DecompilerInterface] = None):
         self.raw_code = raw_code
+        self._decompiler = decompiler
+        self._func = func
+
+        # updated in process_code
+        self.processed_code = raw_code
         self.local_vars = None
         self.func_args = None
-       
-        #TODO: update this to interact with binsync
-    
-    # def rm_comments(self):
-    #     cm_regex = r'// .*'
-    #     self.raw_code = re.sub(cm_regex, '', self.raw_code)
 
-    def rm_comments(self):    
-        # Replace single-line comments with a newline
-        self.raw_code = re.sub(r'//.*', '', self.raw_code)            
-        # Replace multi-line comments with a single newline
-        self.raw_code = re.sub(r'/\*.*?\*/', '', self.raw_code, flags=re.DOTALL)
-   
+        self._random_strings = self._generate_random_strings()
+        self._process_code()
 
-    def random_str(self, n: int):        
+    @staticmethod
+    def _generate_random_strings(amt=200, str_len=6):
+        random_srings = set()
         charset = string.ascii_lowercase + string.digits
-        return "varid_" + "".join([random.choice(charset) for _ in range(n)])
+        for _ in range(amt):
+            rand_str = "varid_" + "".join([random.choice(charset) for _ in range(str_len)])
+            random_srings.add(rand_str)
+
+        return random_srings
+
+    def _random_str(self):
+        if not self._random_strings:
+            self._random_strings = self._generate_random_strings()
+
+        return self._random_strings.pop()
+
+    def _remove_comments(self):
+        # Replace single-line comments with a newline
+        self.processed_code = re.sub(r'//.*', '', self.processed_code)
+        # Replace multi-line comments with a single newline
+        self.processed_code = re.sub(r'/\*.*?\*/', '', self.processed_code, flags=re.DOTALL)
 
     def find_local_vars(self, lines):
 
@@ -59,11 +75,51 @@ class BSDataLoader:
                 all_args.append(ta.split(' ')[-1].strip('*').strip())
         return all_args
 
-    def preprocess_ida_raw_code(self):
+    def _tokenize_names(self, names, token="@@"):
+        return {
+            # @@varname@@random_id@@
+            name: f"{token}{name}{token}{self._random_str()}{token}" for name in names
+        }
+
+    def _process_code(self):
+        if self._decompiler:
+            self._process_code_with_decompiler()
+        else:
+            self._process_code_with_text()
+
+    def _process_code_with_decompiler(self):
+        # some decompilers dont allow the @@ symbol in the variable names
+        # to deal with this we use a tmp one and replace it in post processing
+        tmp_token = "VARBERT"
+
+        # refresh the decompiled obj backend
+        self._func.dec_obj = self._decompiler.get_decompilation_object(self._func)
+        original_names = self._decompiler.local_variable_names(self._func)
+        og_name_to_tokenized_name = self._tokenize_names(original_names, token=tmp_token)
+        tokenized_name_to_og_name = {v: k for k, v in og_name_to_tokenized_name.items()}
+
+        # replace all original names with tmp tokenized names
+        self._decompiler.rename_local_variables_by_names(self._func, og_name_to_tokenized_name)
+        # get the decomp, fix the tmp tokens
+        tokenized_dec_text = self._decompiler.decompile(self._func.addr)
+        tokenized_dec_text = tokenized_dec_text.replace(tmp_token, "@@")
+
+        # revert to the original names in the decomp
+        if self._decompiler.supports_undo:
+            self._decompiler.undo()
+        else:
+            self._decompiler.rename_local_variables_by_names(self._func, tokenized_name_to_og_name)
+
+        self.func_args = [arg.name for arg in self._func.args.values() if arg.name in original_names]
+        self.local_vars = [name for name in original_names if name not in self.func_args]
+        self.processed_code = tokenized_dec_text
+        self._remove_comments()
+
+    def _process_code_with_text(self):
         # rm comments
-        self.rm_comments()
-        func_sign = self.raw_code.split('{')[0]
-        func_body = '{'.join(self.raw_code.split('{')[1:])
+        self._remove_comments()
+        func_sign = self.processed_code.split('{')[0]
+        func_body = '{'.join(self.processed_code.split('{')[1:])
 
         # find variables
         varlines_bodylines = func_body.strip("\n").split('\n\n')
@@ -78,44 +134,21 @@ class BSDataLoader:
         all_vars = self.func_args + self.local_vars
 
         # pre-process variables and replace them with "@@var_name@@random_id@@"
-        varname2token = {}
-        for varname in all_vars:
-            varname2token[varname] = f"@@{varname}@@{self.random_str(6)}@@"
-        new_func = self.raw_code
-    
+        varname2token = self._tokenize_names(all_vars)
+
         # this is a poor man's parser lol
-        allowed_prefixes = [" ", "&", "(", "*", "++", "--", ")", "!"]
+        allowed_prefixes = [" ", "&", ",", "(", "*", "++", "--", "!"]
         allowed_suffixes = [" ", ")", ",", ";", "[", "++", "--"]
 
         for varname, newname in varname2token.items():
             for p in allowed_prefixes:
                 for s in allowed_suffixes:
-                    new_func = new_func.replace(f"{p}{varname}{s}", f"{p}{newname}{s}")
-        
-        return new_func, self.func_args
+                    self.processed_code = self.processed_code.replace(f"{p}{varname}{s}", f"{p}{newname}{s}")
 
-    def preprocess_binsync_raw_code(self):
-
-        # rm comments - not sure if code from binsync has them. This impacts the parsing hence inference
-        self.rm_comments()
-        
-        # pre-process variables and replace them with "@@var_name@@random_id@@"
-        all_vars =  self.func_args + self.local_vars
-        varname2token = {}
-        for varname in all_vars:
-            varname2token[varname] = f"@@{varname}@@{self.random_str(6)}@@"
-        
-        new_func = self.raw_code
-        # this is a poor man's parser lol
-        allowed_prefixes = [" ", "&", "(", "*", "++", "--", ")"]
-        allowed_suffixes = [" ", ")", ",", ";", "["]
-        for varname, newname in varname2token.items():
-            for p in allowed_prefixes:
-                for s in allowed_suffixes:
-                    new_func = new_func.replace(f"{p}{varname}{s}", f"{p}{newname}{s}")
-        return new_func, self.func_args
-
-    def replace_varnames_in_code(self, processed_code: str, func_args, names, origins, predict_for_decompiler_generated_vars: bool=False) -> str:
+    @staticmethod
+    def replace_varnames_in_code(
+        processed_code: str, func_args, names, origins, predict_for_decompiler_generated_vars: bool=False
+    ) -> Dict[str, str]:
 
         # collect all variable name holders
         all_holders = re.findall(r"@@[^\s@]+@@[^\s@]+@@", processed_code)
@@ -129,9 +162,11 @@ class BSDataLoader:
         orig_name_2_popular_name = {}
         # import ipdb; ipdb.set_trace()
         if len(all_holders) != len(names):
-            return "// Error: Unexpected number of variable name holders versus variable names."
+            _l.warning("Unexpected number of variable name holders versus variable names.")
+            return {}
         if len(all_holders) != len(origins):
-            return "// Error: Unexpected number of variable name holders versus variable origins."
+            _l.warning("Unexpected number of variable name holders versus variable origins.")
+            return {}
         for i, holder in enumerate(all_holders):
             original_name, varid = holder.split("@@")[1:3]
             varid2names[varid].append(names[i]["pred_name"])
@@ -180,19 +215,5 @@ class BSDataLoader:
             
             # original name to popular name
             orig_name_2_popular_name[varid2original_name[varid]] = popular_name
-        return result_code, orig_name_2_popular_name
 
-
-
-# Mostly we'll need to implement IDA and Ghidra due to parsing for inference!
-
-class IDALoader(BSDataLoader):
-    def __init__(self):
-        super().__init__()
-        
-        
-
-class GhidraLoader(BSDataLoader):
-    def __init__(self):
-        super().__init__()
-
+        return orig_name_2_popular_name
