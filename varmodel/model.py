@@ -1,7 +1,7 @@
 import re
 import json
 import logging
-import pkg_resources
+import importlib.resources
 from pathlib import Path
 
 import torch
@@ -34,11 +34,11 @@ VAR_SIZE = 2
 
 
 class VARModelInterface:
-    def __init__(self, decompiler="ida"):
-        self.model_base_dir = Path(pkg_resources.resource_filename("varmodel", f"models/model_{decompiler}")).absolute()
+    def __init__(self, decompiler="ghidra"):
+        self.model_base_dir = Path(str(importlib.resources.files("varmodel"))).joinpath(f"models/{decompiler}").absolute()
         if not self.model_base_dir.exists() or not self.model_base_dir.is_dir():
-            logger.error("Failed to get the model data from resource packages. Did you install correctly?")
-            return
+            raise Exception(f"Model directory {self.model_base_dir} does not exist for the decompiler "
+                            f"{decompiler}. Please run `varmodel install`.")
 
         self.out_vocab_map = self.model_base_dir / "idx_to_word.json"
         with open(self.out_vocab_map, "r") as fp:
@@ -259,10 +259,6 @@ class VARModelInterface:
                 varname, varidx, var_score = type_dict[tok], tok, v
                 predicted_vars_type.append({"variable_type": varname, "pred_idx": varidx, "confidence": var_score})
         return predicted_vars, predicted_vars_type
-
-    test_raw_code = """
-    __int64 __fastcall crypt_init_by_name(__int64 @@var_1@@cd@@, __int64 @@var_2@@name@@)\n{\n  return crypt_init_by_name_and_header(@@var_1@@cd@@, @@var_2@@name@@, 0LL);\n}\n
-    """
 
     def process(self, code: str):
         model = self.g_model
