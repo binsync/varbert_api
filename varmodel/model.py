@@ -37,8 +37,8 @@ class VARModelInterface:
     def __init__(self, decompiler="ghidra"):
         self.model_base_dir = Path(str(importlib.resources.files("varmodel"))).joinpath(f"models/{decompiler}").absolute()
         if not self.model_base_dir.exists() or not self.model_base_dir.is_dir():
-            logger.error("Failed to get the model data from resource packages. Did you install correctly?")
-            return
+            raise Exception(f"Model directory {self.model_base_dir} does not exist for the decompiler "
+                            f"{decompiler}. Please run `varmodel install`.")
 
         self.out_vocab_map = self.model_base_dir / "idx_to_word.json"
         with open(self.out_vocab_map, "r") as fp:

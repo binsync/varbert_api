@@ -1,7 +1,14 @@
 import argparse
+import logging
 
-from varmodel.plugin import predict_for_functions
-from yodalib.decompilers import YODALIB_SUPPORTED_DECOMPILERS
+from yodalib.decompilers import YODALIB_SUPPORTED_DECOMPILERS, GHIDRA_DECOMPILER
+
+
+from varmodel import install_model, predict_for_functions
+from varmodel.installer import VarmodelPluginInstaller
+
+
+_l = logging.getLogger(__name__)
 
 
 class Commands:
@@ -10,9 +17,8 @@ class Commands:
     ALL_COMMANDS = [PREDICT, INSTALL]
 
 
-def install():
-    # TODO: Implement
-    pass
+def install(decompiler):
+    VarmodelPluginInstaller().install()
 
 
 def main():
@@ -26,11 +32,14 @@ def main():
     args = parser.parse_args()
 
     if args.cmd == Commands.INSTALL:
-        install()
+        install(args.decompiler)
     elif args.cmd == Commands.PREDICT:
-        predict_for_functions(func_addrs=args.functions, decompiler=args.decompiler)
+        functions = args.functions
+        if functions:
+            functions = [int(func, 0) for func in args.functions]
+
+        predict_for_functions(func_addrs=functions, decompiler=args.decompiler)
 
 
 if __name__ == "__main__":
     main()
-
