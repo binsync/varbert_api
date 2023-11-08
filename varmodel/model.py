@@ -260,10 +260,6 @@ class VARModelInterface:
                 predicted_vars_type.append({"variable_type": varname, "pred_idx": varidx, "confidence": var_score})
         return predicted_vars, predicted_vars_type
 
-    test_raw_code = """
-    __int64 __fastcall crypt_init_by_name(__int64 @@var_1@@cd@@, __int64 @@var_2@@name@@)\n{\n  return crypt_init_by_name_and_header(@@var_1@@cd@@, @@var_2@@name@@, 0LL);\n}\n
-    """
-
     def process(self, code: str):
         model = self.g_model
         tokenizer = self.g_tokenizer

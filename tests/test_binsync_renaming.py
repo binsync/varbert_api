@@ -1,8 +1,23 @@
 import unittest
 import sys
+from typing import Dict
 
 from varmodel import VariableRenamingAPI
-from binsync.data import Function, FunctionArgument, FunctionHeader, StackVariable
+from yodalib.data import Function, FunctionArgument, FunctionHeader, StackVariable
+
+
+def function_with_new_names(function: Function, new_names: Dict[str, str]):
+    new_func: Function = function.copy()
+    for old_name, new_name in new_names.items():
+        for _, arg in new_func.args.items():
+            if arg.name == old_name:
+                arg.name = new_name
+
+        for _, svar in new_func.stack_vars.items():
+            if svar.name == old_name:
+                svar.name = new_name
+
+    return new_func
 
 
 class TestBinSyncRenaming(unittest.TestCase):
@@ -21,7 +36,8 @@ class TestBinSyncRenaming(unittest.TestCase):
         for i, name in enumerate(args_name_data):
             function.args[i] = FunctionArgument(i, name, None, 8)
 
-        new_function = api.predict_variable_names(function_text, function)
+        new_names = api.predict_variable_names(function, decompilation_text=function_text, use_decompiler=False)
+        new_function = function_with_new_names(function, new_names)
 
         assert new_function.args[0] != function.args[0]
         assert new_function.args[1] != function.args[1]
@@ -46,8 +62,9 @@ class TestBinSyncRenaming(unittest.TestCase):
         for i, name in enumerate(args_name_data):
             function.args[i] = FunctionArgument(i, name, None, 8)
 
-        new_function = api.predict_variable_names(function_text, function)
-        
+        new_names = api.predict_variable_names(function, decompilation_text=function_text, use_decompiler=False)
+        new_function = function_with_new_names(function, new_names)
+
         assert new_function.args[0] != function.args[0]
         assert new_function.args[1] != function.args[1]
         assert new_function.args[2] != function.args[2]
@@ -86,7 +103,8 @@ class TestBinSyncRenaming(unittest.TestCase):
         for i, name in enumerate(args_name_data):
             function.args[i] = FunctionArgument(i, name, None, 8)
 
-        new_function = api.predict_variable_names(function_text, function)
+        new_names = api.predict_variable_names(function, decompilation_text=function_text, use_decompiler=False)
+        new_function = function_with_new_names(function, new_names)
 
         assert new_function.args[0] != function.args[0]
         assert new_function.args[1] != function.args[1]
@@ -125,7 +143,8 @@ class TestBinSyncRenaming(unittest.TestCase):
         for i, name in enumerate(args_name_data):
             function.args[i] = FunctionArgument(i, name, None, 8)
 
-        new_function = api.predict_variable_names(function_text, function)
+        new_names = api.predict_variable_names(function, decompilation_text=function_text, use_decompiler=False)
+        new_function = function_with_new_names(function, new_names)
 
         assert new_function.args[0] != function.args[0]
         assert new_function.args[1] != function.args[1]
@@ -296,7 +315,8 @@ class TestBinSyncRenaming(unittest.TestCase):
         for i, name in enumerate(args_name_data):
             function.args[i] = FunctionArgument(i, name, None, 8)
 
-        new_function = api.predict_variable_names(function_text, function)
+        new_names = api.predict_variable_names(function, decompilation_text=function_text, use_decompiler=False)
+
 
 if __name__ == "__main__":
     unittest.main(argv=sys.argv)

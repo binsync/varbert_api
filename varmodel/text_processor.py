@@ -12,7 +12,7 @@ _l = logging.getLogger(__name__)
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 
 
-class DecompilationTextPreprocessor:
+class DecompilationTextProcessor:
     def __init__(self, raw_code, func: Optional[Function] = None, decompiler: Optional[DecompilerInterface] = None):
         self.raw_code = raw_code
         self._decompiler = decompiler
@@ -24,7 +24,11 @@ class DecompilationTextPreprocessor:
         self.func_args = None
 
         self._random_strings = self._generate_random_strings()
-        self._process_code()
+        self._preprocess_code()
+
+    #
+    # Utils
+    #
 
     @staticmethod
     def _generate_random_strings(amt=200, str_len=6):
@@ -42,46 +46,27 @@ class DecompilationTextPreprocessor:
 
         return self._random_strings.pop()
 
-    def _remove_comments(self):
-        # Replace single-line comments with a newline
-        self.processed_code = re.sub(r'//.*', '', self.processed_code)
-        # Replace multi-line comments with a single newline
-        self.processed_code = re.sub(r'/\*.*?\*/', '', self.processed_code, flags=re.DOTALL)
-
-    def find_local_vars(self, lines):
-
-        local_vars = []
-        # regex = r"(\w+(\[\d+\]|\d{0,6}));"
-        regex = r"(\w+(\s?\[\d+\]|\d{0,6}));" # works for both ida and ghidra
-        matches = re.finditer(regex, lines)
-        if matches:
-            for m in matches:
-                tmpvar = m.group(1)
-                if not tmpvar:
-                    continue
-                lv = tmpvar.split('[')[0].strip()
-                local_vars.append(lv)
-        return local_vars
-
-    def find_func_args(self, lines):
-        all_args = []
-        # https://stackoverflow.com/questions/476173/regex-to-pull-out-c-function-prototype-declarations
-        # regex = r'^([\w\*]+( )*?){2,}\(([^!@#$+%^;]+?)\)(?!\s*;)'
-        regex = r'\w+\s+(\w+)\s*\(([^)]*)\)'
-        res = re.search(regex, lines)
-        if res:
-            tmp_args = res.group(2).split(',')
-            for ta in tmp_args:
-                all_args.append(ta.split(' ')[-1].strip('*').strip())
-        return all_args
-
     def _tokenize_names(self, names, token="@@"):
         return {
             # @@varname@@random_id@@
             name: f"{token}{name}{token}{self._random_str()}{token}" for name in names
         }
 
-    def _process_code(self):
+    #
+    # Text editing
+    #
+
+    def _remove_comments(self):
+        # Replace single-line comments with a newline
+        self.processed_code = re.sub(r'//.*', '', self.processed_code)
+        # Replace multi-line comments with a single newline
+        self.processed_code = re.sub(r'/\*.*?\*/', '', self.processed_code, flags=re.DOTALL)
+
+    #
+    # Text Processing
+    #
+
+    def _preprocess_code(self):
         if self._decompiler:
             self._process_code_with_decompiler()
         else:
@@ -145,8 +130,40 @@ class DecompilationTextPreprocessor:
                 for s in allowed_suffixes:
                     self.processed_code = self.processed_code.replace(f"{p}{varname}{s}", f"{p}{newname}{s}")
 
+    #
+    # Dec-unaware utils
+    #
+
     @staticmethod
-    def replace_varnames_in_code(
+    def find_local_vars(lines):
+        local_vars = []
+        # regex = r"(\w+(\[\d+\]|\d{0,6}));"
+        regex = r"(\w+(\s?\[\d+\]|\d{0,6}));"  # works for both ida and ghidra
+        matches = re.finditer(regex, lines)
+        if matches:
+            for m in matches:
+                tmpvar = m.group(1)
+                if not tmpvar:
+                    continue
+                lv = tmpvar.split('[')[0].strip()
+                local_vars.append(lv)
+        return local_vars
+
+    @staticmethod
+    def find_func_args(lines):
+        all_args = []
+        # https://stackoverflow.com/questions/476173/regex-to-pull-out-c-function-prototype-declarations
+        # regex = r'^([\w\*]+( )*?){2,}\(([^!@#$+%^;]+?)\)(?!\s*;)'
+        regex = r'\w+\s+(\w+)\s*\(([^)]*)\)'
+        res = re.search(regex, lines)
+        if res:
+            tmp_args = res.group(2).split(',')
+            for ta in tmp_args:
+                all_args.append(ta.split(' ')[-1].strip('*').strip())
+        return all_args
+
+    @staticmethod
+    def generate_popular_names(
         processed_code: str, func_args, names, origins, predict_for_decompiler_generated_vars: bool=False
     ) -> Dict[str, str]:
 
