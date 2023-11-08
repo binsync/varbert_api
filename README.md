@@ -33,7 +33,7 @@ Follow the steps below:
 In the new terminal you should see a loading bar informing you that the model is predicting on functions.
 Once done, you can go back to Ghidra and see the variable names have been updated.
 To verify your install, you can use the [fauxware](./tests/fauxware) binary in the `tests` directory and
-watch this [quick video]() of first use and verification.
+watch this [quick video](https://youtu.be/TXNztXjOYq4) of first use and verification.
 
 If you would like to run the model on only a few functions you can do:
 ``` 
