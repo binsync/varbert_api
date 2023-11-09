@@ -3,7 +3,7 @@ import os
 import logging
 from collections import defaultdict
 import random, string
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 
 from yodalib.api import DecompilerInterface
 from yodalib.data import Function
@@ -20,8 +20,10 @@ class DecompilationTextProcessor:
 
         # updated in process_code
         self.processed_code = raw_code
+        # TODO: this actually needs to be disabled for now because Function does not handle register variables
+        #self.local_vars = None if not func else list(sv.name for sv in func.stack_vars.values())
         self.local_vars = None
-        self.func_args = None
+        self.func_args = None if not func else list(arg.name for arg in func.args.values())
 
         self._random_strings = self._generate_random_strings()
         self._preprocess_code()
@@ -95,8 +97,11 @@ class DecompilationTextProcessor:
         else:
             self._decompiler.rename_local_variables_by_names(self._func, tokenized_name_to_og_name)
 
-        self.func_args = [arg.name for arg in self._func.args.values() if arg.name in original_names]
-        self.local_vars = [name for name in original_names if name not in self.func_args]
+        if not self.func_args:
+            self.func_args = [arg.name for arg in self._func.args.values() if arg.name in original_names]
+        if not self.local_vars:
+            self.local_vars = [name for name in original_names if name not in self.func_args]
+
         self.processed_code = tokenized_dec_text
         self._remove_comments()
 
@@ -107,17 +112,15 @@ class DecompilationTextProcessor:
         func_body = '{'.join(self.processed_code.split('{')[1:])
 
         # find variables
-        varlines_bodylines = func_body.strip("\n").split('\n\n')
-        if len(varlines_bodylines) >= 2:
-            var_dec_lines = varlines_bodylines[0]
-            self.local_vars = self.find_local_vars(var_dec_lines)
-        else:
-            self.local_vars = []
+        if not self.local_vars:
+            varlines_bodylines = func_body.strip("\n").split('\n\n')
+            self.local_vars = self.find_local_vars(varlines_bodylines[0]) if len(varlines_bodylines) >= 2 else []
 
-        # find arg
-        self.func_args = self.find_func_args(func_sign)
+        # find args
+        if not self.func_args:
+            self.func_args = self.find_func_args(func_sign)
+
         all_vars = self.func_args + self.local_vars
-
         # pre-process variables and replace them with "@@var_name@@random_id@@"
         varname2token = self._tokenize_names(all_vars)
 
@@ -165,7 +168,7 @@ class DecompilationTextProcessor:
     @staticmethod
     def generate_popular_names(
         processed_code: str, func_args, names, origins, predict_for_decompiler_generated_vars: bool=False
-    ) -> Dict[str, str]:
+    ) -> Tuple[Dict[str, str], str]:
 
         # collect all variable name holders
         all_holders = re.findall(r"@@[^\s@]+@@[^\s@]+@@", processed_code)
@@ -177,13 +180,12 @@ class DecompilationTextProcessor:
         funcargs_in_varid = set()
         varid2holder = {}
         orig_name_2_popular_name = {}
-        # import ipdb; ipdb.set_trace()
         if len(all_holders) != len(names):
             _l.warning("Unexpected number of variable name holders versus variable names.")
-            return {}
+            return {}, ""
         if len(all_holders) != len(origins):
             _l.warning("Unexpected number of variable name holders versus variable origins.")
-            return {}
+            return {}, ""
         for i, holder in enumerate(all_holders):
             original_name, varid = holder.split("@@")[1:3]
             varid2names[varid].append(names[i]["pred_name"])
@@ -198,7 +200,7 @@ class DecompilationTextProcessor:
             varid2original_name[varid] = original_name
 
         # majority vote
-        result_code = processed_code
+        renamed_code = processed_code
         used_names = set()
         for varid, names in varid2names.items():
             names2count = defaultdict(int)
@@ -228,9 +230,9 @@ class DecompilationTextProcessor:
                 if not predict_for_decompiler_generated_vars:
                     popular_name = varid2original_name[varid]
                 popular_name += " /*decompiler*/"
-            result_code = result_code.replace(varid2holder[varid], popular_name)
+            renamed_code = renamed_code.replace(varid2holder[varid], popular_name)
             
             # original name to popular name
             orig_name_2_popular_name[varid2original_name[varid]] = popular_name
 
-        return orig_name_2_popular_name
+        return orig_name_2_popular_name, renamed_code

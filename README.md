@@ -43,12 +43,23 @@ varmodel predict --decompiler ghidra --function 0x4006fd 0x40071d
 ```
 
 ### Scripting
+#### Without Decompiler
 ```python
 from varmodel import VariableRenamingAPI
-
-api = VariableRenamingAPI(decompiler_name="ida")
-api.predict_variable_names(function_text, binsync_function)
+api = VariableRenamingAPI(decompiler_name="ida", use_decompiler=False)
+new_names, new_code = api.predict_variable_names(decompilation_text="__int64 sub_400664(char *a1,char *a2)\n {}", use_decompiler=False)
+print(new_code)
 ```
-Where `function_text` is the decompilation text and `binsync_function` is the `Function` you plan to have variables
-renamed for. See the testcase in `tests` for an expanded use example. 
 
+You can also find more examples in the [tests.py](./tests/tests.py) file.
+
+#### Inside Decompiler
+```python
+from varmodel import VariableRenamingAPI
+from yodalib.api import DecompilerInterface
+dec = DecompilerInterface()
+api = VariableRenamingAPI(decompiler_interface=dec)
+for func_addr in dec.functions:
+    new_names, new_code = api.predict_variable_names(function=dec.functions[func_addr])
+    print(new_names)
+```
