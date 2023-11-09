@@ -11,6 +11,8 @@ pip3 install ./varmodel && varmodel install
 The `varmodel install` command will start an interactive prompt to install the model and decompiler plugin code.
 Please make sure you install `varmodel` to the same Python environment as your decompiler.
 
+If you do not want to use decompiler integration, you can use `varmodel download-models` to just download the models (and not install any plugins).
+
 ## Usage
 VARModel can be used in two ways:
 - directly on decompiled text (without an attached decompiler)

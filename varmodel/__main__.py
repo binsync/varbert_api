@@ -4,7 +4,7 @@ import logging
 from yodalib.decompilers import YODALIB_SUPPORTED_DECOMPILERS, GHIDRA_DECOMPILER
 
 
-from varmodel import install_model, predict_for_functions
+from varmodel import SUPPORTED_MODELS, install_model, predict_for_functions
 from varmodel.installer import VarmodelPluginInstaller
 
 
@@ -12,9 +12,10 @@ _l = logging.getLogger(__name__)
 
 
 class Commands:
-    PREDICT = "predict"
+    DOWNLOAD_MODELS = "download-models"
     INSTALL = "install"
-    ALL_COMMANDS = [PREDICT, INSTALL]
+    PREDICT = "predict"
+    ALL_COMMANDS = [DOWNLOAD_MODELS, PREDICT, INSTALL]
 
 
 def install(decompiler):
@@ -31,7 +32,10 @@ def main():
     parser.add_argument("--functions", type=str, nargs="+", help="Functions to predict on")
     args = parser.parse_args()
 
-    if args.cmd == Commands.INSTALL:
+    if args.cmd == Commands.DOWNLOAD_MODELS:
+        for target in SUPPORTED_MODELS:
+            install_model(target, opt_level="O2")
+    elif args.cmd == Commands.INSTALL:
         install(args.decompiler)
     elif args.cmd == Commands.PREDICT:
         functions = args.functions
