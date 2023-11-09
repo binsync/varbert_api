@@ -24,10 +24,14 @@ from .api import VariableRenamingAPI
 
 MODELS_PATH = Path(Path(str(importlib.resources.files("varmodel"))) / "models").absolute()
 SUPPORTED_MODELS = {GHIDRA_DECOMPILER, IDA_DECOMPILER}
-MODEL_FOLDER = "DECOMPILER-OPT-Function"
+MODEL_FOLDER = "DECOMPILER-OPT-Binary"
 MODEL_URLS = {
-    f"{GHIDRA_DECOMPILER}-O2": "https://www.dropbox.com/scl/fi/x5ci28s0aw3i852kg9w1j/Ghidra-O2-Function.tar.gz?rlkey=wpe08afvxelcblgcqndrxmvtm&dl=1",
-    f"{IDA_DECOMPILER}-O2": "https://www.dropbox.com/scl/fi/ku26eebbwvug5fu2pc4ek/IDA-O2-Function.tar.gz?rlkey=edlri604hhuohh8n5d7d02tnd&dl=1",
+    # function based models:
+    #f"{GHIDRA_DECOMPILER}-O2": "https://www.dropbox.com/scl/fi/x5ci28s0aw3i852kg9w1j/Ghidra-O2-Function.tar.gz?rlkey=wpe08afvxelcblgcqndrxmvtm&dl=1",
+    #f"{IDA_DECOMPILER}-O2": "https://www.dropbox.com/scl/fi/ku26eebbwvug5fu2pc4ek/IDA-O2-Function.tar.gz?rlkey=edlri604hhuohh8n5d7d02tnd&dl=1",
+    # binary based models:
+    f"{GHIDRA_DECOMPILER}-O2": "https://www.dropbox.com/scl/fi/nbk5b068z6ffsdl0kgbuw/Ghidra-O2-Binary.tar.gz?rlkey=m83iit4jh5fg6icl5cf2z3yhq&dl=1",
+    f"{IDA_DECOMPILER}-O2": "https://www.dropbox.com/scl/fi/vk0ybwu4uoru4fl61yztw/IDA-O2-Binary.tar.gz?rlkey=9rt8js8qrhkqp2cvvttxrlwd2&dl=1",
 }
 
 _l = logging.getLogger(__name__)
