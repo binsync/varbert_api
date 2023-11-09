@@ -42,6 +42,19 @@ If you would like to run the model on only a few functions you can do:
 varmodel predict --decompiler ghidra --function 0x4006fd 0x40071d 
 ```
 
+### Command Line (without running decompiler)
+
+Note that VARModel runs better when it is directly hooked up to a decompiler because it can use additional semantic information that the decompiler knows about the decompiled code.
+
+However, we do have the ability to run VARModel without a running decompiler, only operating on the text from the command line.
+
+Running the following will cause VARModel to read a function from standard input and output the function with predicted variable names to standard out:
+```bash
+varmodel --decompiler ida predict
+```
+
+You can select different decompilers that will use different models that are trained on the different decompilers.
+
 ### Scripting
 #### Without Decompiler
 ```python
