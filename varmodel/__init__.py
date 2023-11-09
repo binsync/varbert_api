@@ -1,4 +1,4 @@
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 import importlib.resources
 import tarfile
@@ -8,6 +8,7 @@ import hashlib
 import math
 import platform
 from typing import Optional, List
+import shutil
 
 from tqdm import tqdm
 from yodalib.api import DecompilerInterface
@@ -25,8 +26,11 @@ from .api import VariableRenamingAPI
 MODELS_PATH = Path(Path(str(importlib.resources.files("varmodel"))) / "models").absolute()
 SUPPORTED_MODELS = {GHIDRA_DECOMPILER, IDA_DECOMPILER}
 MODEL_FOLDER = "DECOMPILER-OPT-Function"
+# all models are found here: https://www.dropbox.com/scl/fo/socl7rd5lsv926whylqpn/h?rlkey=i0x74bdipj41hys5rorflxawo
 MODEL_URLS = {
     # function based models:
+    f"{GHIDRA_DECOMPILER}-O0": "https://www.dropbox.com/scl/fi/8xsmmlzypd45icn8csk6y/Ghidra-O0-Function.tar.gz?rlkey=1b92b9ejktoyewjztvo3ns8q1&dl=1",
+    f"{IDA_DECOMPILER}-O0": "https://www.dropbox.com/scl/fi/dmmfqqwvwhkswiv48ltfs/IDA-O0-Function.tar.gz?rlkey=3unxmiydbm5si3n7jh5r43qjp&dl=1",
     f"{GHIDRA_DECOMPILER}-O2": "https://www.dropbox.com/scl/fi/x5ci28s0aw3i852kg9w1j/Ghidra-O2-Function.tar.gz?rlkey=wpe08afvxelcblgcqndrxmvtm&dl=1",
     f"{IDA_DECOMPILER}-O2": "https://www.dropbox.com/scl/fi/ku26eebbwvug5fu2pc4ek/IDA-O2-Function.tar.gz?rlkey=edlri604hhuohh8n5d7d02tnd&dl=1",
     # binary based models:
@@ -37,11 +41,15 @@ MODEL_URLS = {
 _l = logging.getLogger(__name__)
 
 
-def install_model(decompiler, opt_level="O2"):
+def install_model(decompiler, opt_level="O0", reinstall=False):
     # check if the model exists
-    if MODELS_PATH.joinpath(decompiler).exists():
-        _l.info(f"Model for {decompiler} already exists. Skipping download.")
-        return
+    decompiler_model = MODELS_PATH / decompiler
+    if decompiler_model.exists():
+        if reinstall:
+            shutil.rmtree(decompiler_model)
+        else:
+            _l.info(f"Model for {decompiler} already exists. Skipping download.")
+            return
 
     # saved models on the remote side have some messed up names, so we have to do some
     # string matching here to make sure we download and move the correct stuff
@@ -53,6 +61,7 @@ def install_model(decompiler, opt_level="O2"):
 
     dl_model_folder = MODELS_PATH / Path(MODEL_FOLDER.replace("DECOMPILER", decompiler).replace("OPT", opt_level))
     url = MODEL_URLS[f"{compliant_decompiler_name}-{opt_level}"]
+    _l.info(f"Downloading model for {compliant_decompiler_name} now...")
     tar_file_path = _download_file(url, MODELS_PATH / f"model.tar.gz")
     with tarfile.open(tar_file_path, "r:gz") as tar:
         tar.extractall(path=MODELS_PATH)

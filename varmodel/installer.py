@@ -26,6 +26,6 @@ class VarmodelPluginInstaller(YODAPluginInstaller):
         self.info("We will now download VarBERT models for each decompiler you've installed.")
         for target in self._successful_installs:
             if target in SUPPORTED_MODELS:
-                install_model(target, opt_level="O2")
+                install_model(target, opt_level="O0")
 
         self.info("Install completed!")

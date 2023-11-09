@@ -31,12 +31,13 @@ def main():
     parser.add_argument("cmd", type=str, choices=Commands.ALL_COMMANDS, help="Command to run")
     parser.add_argument("--decompiler", type=str, choices=YODALIB_SUPPORTED_DECOMPILERS, help="Decompiler to use")
     parser.add_argument("--functions", type=str, nargs="+", help="Functions to predict on")
+    parser.add_argument("--reinstall", action="store_true", default=False, help="Re-download and reinstall the models")
     parser.add_argument("-v", "--version", action="version", version=f"VARModel {varmodel.__version__}")
     args = parser.parse_args()
 
     if args.cmd == Commands.DOWNLOAD_MODELS:
         for target in SUPPORTED_MODELS:
-            install_model(target, opt_level="O2")
+            install_model(target, opt_level="O0", reinstall=args.reinstall)
     elif args.cmd == Commands.INSTALL:
         install(args.decompiler)
     elif args.cmd == Commands.PREDICT:
