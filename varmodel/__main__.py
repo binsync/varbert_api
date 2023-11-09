@@ -4,6 +4,7 @@ import logging
 from yodalib.decompilers import YODALIB_SUPPORTED_DECOMPILERS, GHIDRA_DECOMPILER
 
 
+import varmodel
 from varmodel import SUPPORTED_MODELS, install_model, predict_for_functions
 from varmodel.installer import VarmodelPluginInstaller
 
@@ -30,6 +31,7 @@ def main():
     parser.add_argument("cmd", type=str, choices=Commands.ALL_COMMANDS, help="Command to run")
     parser.add_argument("--decompiler", type=str, choices=YODALIB_SUPPORTED_DECOMPILERS, help="Decompiler to use")
     parser.add_argument("--functions", type=str, nargs="+", help="Functions to predict on")
+    parser.add_argument("-v", "--version", action="version", version=f"VARModel {varmodel.__version__}")
     args = parser.parse_args()
 
     if args.cmd == Commands.DOWNLOAD_MODELS:

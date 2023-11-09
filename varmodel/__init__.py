@@ -109,7 +109,8 @@ def predict_for_functions(func_addrs: Optional[List[int]] = None, decompiler: Op
         except Exception:
             continue
 
-        old_to_new_names = varbert_api.predict_variable_names(function)
+        old_to_new_names, new_text = varbert_api.predict_variable_names(function)
+        breakpoint()
         if old_to_new_names:
             total_suggested_funcs += 1
             total_suggested_vars += len(old_to_new_names)
