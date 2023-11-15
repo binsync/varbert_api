@@ -17,7 +17,8 @@ class Commands:
     DOWNLOAD_MODELS = "download-models"
     INSTALL = "install"
     PREDICT = "predict"
-    ALL_COMMANDS = [DOWNLOAD_MODELS, PREDICT, INSTALL]
+    PREDICT_HEADLESS = "predict-headless"
+    ALL_COMMANDS = [DOWNLOAD_MODELS, PREDICT, PREDICT_HEADLESS, INSTALL]
 
 
 def install(decompiler):
@@ -45,12 +46,13 @@ def main():
         functions = args.functions
         if functions:
             functions = [int(func, 0) for func in args.functions]
-            predict_for_functions(func_addrs=functions, decompiler=args.decompiler)
-        else:
-            function_text = sys.stdin.read()
-            api = VariableRenamingAPI(decompiler_name=args.decompiler, use_decompiler=False)
-            new_names, new_code = api.predict_variable_names(decompilation_text=function_text, use_decompiler=False)
-            print(new_code)
+
+        predict_for_functions(func_addrs=functions, decompiler=args.decompiler)
+    elif args.cmd == Commands.PREDICT_HEADLESS:
+        function_text = sys.stdin.read()
+        api = VariableRenamingAPI(decompiler_name=args.decompiler, use_decompiler=False)
+        new_names, new_code = api.predict_variable_names(decompilation_text=function_text, use_decompiler=False)
+        print(new_code)
 
 
 if __name__ == "__main__":

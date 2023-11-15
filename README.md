@@ -50,7 +50,7 @@ However, we do have the ability to run VARModel without a running decompiler, on
 
 Running the following will cause VARModel to read a function from standard input and output the function with predicted variable names to standard out:
 ```bash
-varmodel --decompiler ida predict
+varmodel --decompiler ida predict-headless
 ```
 
 You can select different decompilers that will use different models that are trained on the different decompilers.
