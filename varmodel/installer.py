@@ -2,10 +2,10 @@ import textwrap
 
 from varmodel import SUPPORTED_MODELS, install_model
 
-from yodalib.plugin_installer import YODAPluginInstaller
+from libbs.plugin_installer import PluginInstaller
 
 
-class VarmodelPluginInstaller(YODAPluginInstaller):
+class VarmodelPluginInstaller(PluginInstaller):
     def display_prologue(self):
         print(textwrap.dedent(
             """

@@ -11,8 +11,8 @@ from typing import Optional, List
 import shutil
 
 from tqdm import tqdm
-from yodalib.api import DecompilerInterface
-from yodalib.decompilers import GHIDRA_DECOMPILER, IDA_DECOMPILER
+from libbs.api import DecompilerInterface
+from libbs.decompilers import GHIDRA_DECOMPILER, IDA_DECOMPILER
 
 # initialize logging for the entire project
 import logging
@@ -25,6 +25,7 @@ from .api import VariableRenamingAPI
 
 MODELS_PATH = Path(Path(str(importlib.resources.files("varmodel"))) / "models").absolute()
 SUPPORTED_MODELS = {GHIDRA_DECOMPILER, IDA_DECOMPILER}
+SUBSTITUTE_DECOMPILER_MODEL = IDA_DECOMPILER
 MODEL_FOLDER = "DECOMPILER-OPT-Function"
 # all models are found here: https://www.dropbox.com/scl/fo/socl7rd5lsv926whylqpn/h?rlkey=i0x74bdipj41hys5rorflxawo
 MODEL_URLS = {
@@ -42,6 +43,10 @@ _l = logging.getLogger(__name__)
 
 
 def install_model(decompiler, opt_level="O0", reinstall=False):
+    if decompiler not in SUPPORTED_MODELS:
+        _l.warning("Model for decompiler is not supported yet, using model for %s", SUBSTITUTE_DECOMPILER_MODEL)
+        decompiler = SUBSTITUTE_DECOMPILER_MODEL
+
     # check if the model exists
     decompiler_model = MODELS_PATH / decompiler
     if decompiler_model.exists():

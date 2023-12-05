@@ -35,6 +35,10 @@ VAR_SIZE = 2
 
 class VARModelInterface:
     def __init__(self, decompiler="ghidra"):
+        from varmodel import SUPPORTED_MODELS, SUBSTITUTE_DECOMPILER_MODEL
+        if decompiler not in SUPPORTED_MODELS:
+            decompiler = SUBSTITUTE_DECOMPILER_MODEL
+
         self.model_base_dir = Path(str(importlib.resources.files("varmodel"))).joinpath(f"models/{decompiler}").absolute()
         if not self.model_base_dir.exists() or not self.model_base_dir.is_dir():
             raise Exception(f"Model directory {self.model_base_dir} does not exist for the decompiler "

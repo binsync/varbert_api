@@ -1,35 +1,32 @@
 import logging
 from typing import Optional, Dict, Tuple
 
+from dailalib.api import AIAPI
+from libbs.data import Function
+
 from .text_processor import DecompilationTextProcessor
 from .model import VARModelInterface
-
-from yodalib.data import Function
-from yodalib.api import DecompilerInterface
 
 _l = logging.getLogger(__name__)
 
 
-class VariableRenamingAPI:
-    def __init__(
-        self,
-        decompiler_interface=None,
-        decompiler_name=None,
-        use_decompiler=True,
-        delay_init=False,
-        min_func_size=0x10
-    ):
-        self._dec_interface = DecompilerInterface.discover_interface(force_decompiler=decompiler_name) \
-            if use_decompiler and decompiler_interface is None else decompiler_interface
-        self._dec_name = decompiler_name if decompiler_interface is None else decompiler_interface.name
+class VariableRenamingAPI(AIAPI):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._model_interface: Optional[VARModelInterface] = (
             VARModelInterface(decompiler=self._dec_name)
-        ) if not delay_init else None
+        ) if not self._delay_init else None
 
-        if self._dec_interface is None and not self._dec_name:
-            raise ValueError("You must either provide a decompiler name or a decompiler interface.")
+    @AIAPI.requires_function
+    def query_model(self, *args, function=None, dec_text=None, use_dec=True, **kwargs) -> Tuple[Dict[str, str], str]:
+        """
+        Standardized function for querying the model in DAILA interfaces.
+        """
+        old_to_new_vars, renamed_code = self.predict_variable_names(function=function, decompilation_text=dec_text, use_decompiler=use_dec)
+        if use_dec and old_to_new_vars:
+            self._dec_interface.rename_local_variables_by_names(function, old_to_new_vars)
 
-        self._min_func_size = min_func_size
+        return old_to_new_vars, renamed_code
 
     def predict_variable_names(
         self, function: Function = None, decompilation_text: Optional[str] = None, use_decompiler=True,
@@ -95,7 +92,7 @@ class VariableRenamingAPI:
             new_names = set()
             # remove names that are duplicates
             for orig_name, popular_name in orig_name_2_popular_name.items():
-                if popular_name not in new_names:
+                if popular_name not in new_names and orig_name != popular_name:
                     name_pairs.append((orig_name, popular_name))
                     new_names.add(popular_name)
 
@@ -105,7 +102,5 @@ class VariableRenamingAPI:
             }
 
         # check after filtering
-        if orig_name_2_popular_name:
-            _l.info(f"Predicted {len(orig_name_2_popular_name)} names for function {function}")
-
+        _l.info(f"Predicted {len(orig_name_2_popular_name)} new names for function {function}")
         return orig_name_2_popular_name, renamed_code

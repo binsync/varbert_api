@@ -5,8 +5,8 @@ from collections import defaultdict
 import random, string
 from typing import Optional, Dict, Tuple
 
-from yodalib.api import DecompilerInterface
-from yodalib.data import Function
+from libbs.api import DecompilerInterface
+from libbs.data import Function
 
 _l = logging.getLogger(__name__)
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
@@ -103,6 +103,10 @@ class DecompilationTextProcessor:
             self.local_vars = [name for name in original_names if name not in self.func_args]
 
         self.processed_code = tokenized_dec_text
+        if "@@" not in self.processed_code:
+            _l.error("Decompiler did not tokenize any variable names.")
+            return
+
         self._remove_comments()
 
     def _process_code_with_text(self):
