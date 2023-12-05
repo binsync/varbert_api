@@ -2,27 +2,12 @@ import argparse
 import logging
 import sys
 
-from libbs.decompilers import libbs_SUPPORTED_DECOMPILERS, GHIDRA_DECOMPILER
-
-
 import varmodel
-from varmodel import SUPPORTED_MODELS, VariableRenamingAPI, install_model, predict_for_functions
-from varmodel.installer import VarmodelPluginInstaller
+from varmodel import SUPPORTED_MODELS, VariableRenamingAPI, install_model
+from libbs.decompilers import IDA_DECOMPILER
 
 
 _l = logging.getLogger(__name__)
-
-
-class Commands:
-    DOWNLOAD_MODELS = "download-models"
-    INSTALL = "install"
-    PREDICT = "predict"
-    PREDICT_HEADLESS = "predict-headless"
-    ALL_COMMANDS = [DOWNLOAD_MODELS, PREDICT, PREDICT_HEADLESS, INSTALL]
-
-
-def install(decompiler):
-    VarmodelPluginInstaller().install()
 
 
 def main():
@@ -30,25 +15,18 @@ def main():
     The Variable Renaming Model is a model that predicts variable names based on the decompiled code.
     This script is used either inside a decompiler or to spawn a decompiler. 
     """)
-    parser.add_argument("cmd", type=str, choices=Commands.ALL_COMMANDS, help="Command to run")
-    parser.add_argument("--decompiler", type=str, choices=libbs_SUPPORTED_DECOMPILERS, help="Decompiler to use")
-    parser.add_argument("--functions", type=str, nargs="+", help="Functions to predict on")
+    parser.add_argument("-d", "--download-models", nargs="*", choices=SUPPORTED_MODELS, help="Download models for supported decompilers. If no decompilers are specified, all models will be downloaded.")
+    parser.add_argument("-p", "--predict", action="store_true", help="Predict variable names for a function over stdin and write out the resulting decompilation over stdout")
+    parser.add_argument("--decompiler", type=str, choices=SUPPORTED_MODELS, help="Decompiler to use for prediction. If not specified, IDA Pro will be used.", default=IDA_DECOMPILER)
     parser.add_argument("--reinstall", action="store_true", default=False, help="Re-download and reinstall the models")
     parser.add_argument("-v", "--version", action="version", version=f"VARModel {varmodel.__version__}")
     args = parser.parse_args()
 
-    if args.cmd == Commands.DOWNLOAD_MODELS:
-        for target in SUPPORTED_MODELS:
-            install_model(target, opt_level="O0", reinstall=args.reinstall)
-    elif args.cmd == Commands.INSTALL:
-        install(args.decompiler)
-    elif args.cmd == Commands.PREDICT:
-        functions = args.functions
-        if functions:
-            functions = [int(func, 0) for func in args.functions]
-
-        predict_for_functions(func_addrs=functions, decompiler=args.decompiler)
-    elif args.cmd == Commands.PREDICT_HEADLESS:
+    if args.download_models is not None:
+        models = args.download_models or SUPPORTED_MODELS
+        for model in models:
+            install_model(model, reinstall=args.reinstall)
+    elif args.predict:
         function_text = sys.stdin.read()
         api = VariableRenamingAPI(decompiler_name=args.decompiler, use_decompiler=False)
         new_names, new_code = api.predict_variable_names(decompilation_text=function_text, use_decompiler=False)
