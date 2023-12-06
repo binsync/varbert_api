@@ -2,7 +2,7 @@ import unittest
 import sys
 from typing import Dict
 
-from varmodel import VariableRenamingAPI
+from varbert import VariableRenamingAPI
 from yodalib.data import Function, FunctionArgument, FunctionHeader, StackVariable
 
 

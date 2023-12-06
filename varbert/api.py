@@ -7,7 +7,7 @@ from libbs.data import Function
 from tqdm import tqdm
 
 from .text_processor import DecompilationTextProcessor
-from .model import VARModelInterface
+from .model import VarBERTInterface
 
 _l = logging.getLogger(__name__)
 
@@ -15,8 +15,8 @@ _l = logging.getLogger(__name__)
 class VariableRenamingAPI(AIAPI):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._model_interface: Optional[VARModelInterface] = (
-            VARModelInterface(decompiler=self._dec_name)
+        self._model_interface: Optional[VarBERTInterface] = (
+            VarBERTInterface(decompiler=self._dec_name)
         ) if not self._delay_init else None
 
     def predict_variable_names(
@@ -31,7 +31,7 @@ class VariableRenamingAPI(AIAPI):
         Note: you must have the models installed for the decompiler_name you are using.
 
         Example use without decompiler:
-        >>> from varmodel import VariableRenamingAPI
+        >>> from varbert import VariableRenamingAPI
         >>> api = VariableRenamingAPI(decompiler_name="ida", use_decompiler=False)
         >>> new_names, new_code = api.predict_variable_names(decompilation_text="__int64 sub_400664(char *a1,char *a2)\n {}", use_decompiler=False)
 
@@ -54,7 +54,7 @@ class VariableRenamingAPI(AIAPI):
                 return {}, ""
         # can be None because of the delay init
         if self._model_interface is None:
-            self._model_interface = VARModelInterface(decompiler=self._dec_name)
+            self._model_interface = VarBERTInterface(decompiler=self._dec_name)
 
         if decompilation_text is None:
             if not use_decompiler:
@@ -113,7 +113,7 @@ class VariableRenamingAPI(AIAPI):
         Standardized function for predicting names for many functions in DAILA interfaces.
         """
         dec_interface = DecompilerInterface.discover_interface(force_decompiler=decompiler)
-        varbert_api = VariableRenamingAPI(decompiler_interface=dec_interface)
+        varbert = VariableRenamingAPI(decompiler_interface=dec_interface)
         func_addrs = func_addrs if func_addrs else dec_interface.functions
 
         # grab real functions, which require decompilation, and predict names for them
@@ -126,7 +126,7 @@ class VariableRenamingAPI(AIAPI):
             except Exception:
                 continue
 
-            old_to_new_names, new_text = varbert_api.predict_variable_names(function)
+            old_to_new_names, new_text = varbert.predict_variable_names(function)
             if old_to_new_names:
                 total_suggested_funcs += 1
                 total_suggested_vars += len(old_to_new_names)
@@ -134,5 +134,5 @@ class VariableRenamingAPI(AIAPI):
 
         _l.info(f"Suggested names for {total_suggested_vars} variables in {total_suggested_funcs} functions.")
         # make sure things are destroyed
-        del varbert_api, dec_interface
+        del varbert, dec_interface
 

@@ -33,16 +33,16 @@ logger = logging.getLogger(__name__)
 VAR_SIZE = 2
 
 
-class VARModelInterface:
+class VarBERTInterface:
     def __init__(self, decompiler="ghidra"):
-        from varmodel import SUPPORTED_MODELS, SUBSTITUTE_DECOMPILER_MODEL
+        from varbert import SUPPORTED_MODELS, SUBSTITUTE_DECOMPILER_MODEL
         if decompiler not in SUPPORTED_MODELS:
             decompiler = SUBSTITUTE_DECOMPILER_MODEL
 
-        self.model_base_dir = Path(str(importlib.resources.files("varmodel"))).joinpath(f"models/{decompiler}").absolute()
+        self.model_base_dir = Path(str(importlib.resources.files("varbert"))).joinpath(f"models/{decompiler}").absolute()
         if not self.model_base_dir.exists() or not self.model_base_dir.is_dir():
             raise Exception(f"Model directory {self.model_base_dir} does not exist for the decompiler "
-                            f"{decompiler}. Please run `varmodel install`.")
+                            f"{decompiler}. Please run `varbert install`.")
 
         self.out_vocab_map = self.model_base_dir / "idx_to_word.json"
         with open(self.out_vocab_map, "r") as fp:
@@ -72,8 +72,8 @@ class VARModelInterface:
 
     @staticmethod
     def normalize(k):
-        if VARModelInterface.is_camel_case(k):
-            k=VARModelInterface.change_case(k)
+        if VarBERTInterface.is_camel_case(k):
+            k=VarBERTInterface.change_case(k)
         else:
             k=k.lower()
         return k
@@ -137,7 +137,7 @@ class VARModelInterface:
         return r
 
     def preprocess_word_mask(self, ftext, tokenizer):
-        words = VARModelInterface.split_words(ftext)
+        words = VarBERTInterface.split_words(ftext)
         pwords = []
         tpwords = []
         owords = []
@@ -160,7 +160,7 @@ class VARModelInterface:
                 post_var = splits[-1]
 
                 assert len(variable_word) > 0
-                norm_variable_word = VARModelInterface.normalize(variable_word)
+                norm_variable_word = VarBERTInterface.normalize(variable_word)
                 var_tokens = self.get_var_token(norm_variable_word)
                 masked_words = ["<mask>"] * len(var_tokens)
                 var_toks.append(var_tokens)

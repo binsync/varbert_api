@@ -1,4 +1,4 @@
-__version__ = "1.4.0"
+__version__ = "2.0.0"
 
 import importlib.resources
 import tarfile
@@ -14,14 +14,14 @@ from libbs.decompilers import GHIDRA_DECOMPILER, IDA_DECOMPILER
 
 # initialize logging for the entire project
 import logging
-logging.getLogger("varmodel").addHandler(logging.NullHandler())
+logging.getLogger("varbert").addHandler(logging.NullHandler())
 from .logger import Loggers
 loggers = Loggers()
 del Loggers
 
 from .api import VariableRenamingAPI
 
-MODELS_PATH = Path(Path(str(importlib.resources.files("varmodel"))) / "models").absolute()
+MODELS_PATH = Path(Path(str(importlib.resources.files("varbert"))) / "models").absolute()
 SUPPORTED_MODELS = {GHIDRA_DECOMPILER, IDA_DECOMPILER}
 SUBSTITUTE_DECOMPILER_MODEL = IDA_DECOMPILER
 MODEL_FOLDER = "DECOMPILER-OPT-Function"
