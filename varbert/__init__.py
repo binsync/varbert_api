@@ -1,4 +1,4 @@
-__version__ = "2.0.2"
+__version__ = "2.0.3"
 
 import importlib.resources
 import tarfile
@@ -20,8 +20,9 @@ loggers = Loggers()
 del Loggers
 
 from .api import VariableRenamingAPI
+from libbs.plugin_installer import PluginInstaller
 
-MODELS_PATH = Path(Path(str(importlib.resources.files("varbert"))) / "models").absolute()
+MODELS_PATH = PluginInstaller.find_pkg_files("varbert") / "models"
 SUPPORTED_MODELS = {GHIDRA_DECOMPILER, IDA_DECOMPILER}
 SUBSTITUTE_DECOMPILER_MODEL = IDA_DECOMPILER
 MODEL_FOLDER = "DECOMPILER-OPT-Function"
