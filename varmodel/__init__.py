@@ -1,4 +1,4 @@
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 import importlib.resources
 import tarfile
@@ -7,12 +7,10 @@ import urllib.request
 import hashlib
 import math
 import platform
-from typing import Optional, List
 import shutil
 
 from tqdm import tqdm
-from yodalib.api import DecompilerInterface
-from yodalib.decompilers import GHIDRA_DECOMPILER, IDA_DECOMPILER
+from libbs.decompilers import GHIDRA_DECOMPILER, IDA_DECOMPILER
 
 # initialize logging for the entire project
 import logging
@@ -25,6 +23,7 @@ from .api import VariableRenamingAPI
 
 MODELS_PATH = Path(Path(str(importlib.resources.files("varmodel"))) / "models").absolute()
 SUPPORTED_MODELS = {GHIDRA_DECOMPILER, IDA_DECOMPILER}
+SUBSTITUTE_DECOMPILER_MODEL = IDA_DECOMPILER
 MODEL_FOLDER = "DECOMPILER-OPT-Function"
 # all models are found here: https://www.dropbox.com/scl/fo/socl7rd5lsv926whylqpn/h?rlkey=i0x74bdipj41hys5rorflxawo
 MODEL_URLS = {
@@ -42,6 +41,10 @@ _l = logging.getLogger(__name__)
 
 
 def install_model(decompiler, opt_level="O0", reinstall=False):
+    if decompiler not in SUPPORTED_MODELS:
+        _l.warning("Model for decompiler is not supported yet, using model for %s", SUBSTITUTE_DECOMPILER_MODEL)
+        decompiler = SUBSTITUTE_DECOMPILER_MODEL
+
     # check if the model exists
     decompiler_model = MODELS_PATH / decompiler
     if decompiler_model.exists():
@@ -102,29 +105,4 @@ def _download_file(url: str, save_location: Path, verify_hash=False) -> Path:
 
     return save_location
 
-
-def predict_for_functions(func_addrs: Optional[List[int]] = None, decompiler: Optional[str] = None):
-    dec_interface = DecompilerInterface.discover_interface(force_decompiler=decompiler)
-    varbert_api = VariableRenamingAPI(decompiler_interface=dec_interface)
-    func_addrs = func_addrs if func_addrs else dec_interface.functions
-
-    # grab real functions, which require decompilation, and predict names for them
-    total_suggested_funcs = 0
-    total_suggested_vars = 0
-    for function_addr in tqdm(func_addrs, desc="Predicting names for functions..."):
-        # functions can be both non-existent and non-decompilable
-        try:
-            function = dec_interface.functions[function_addr]
-        except Exception:
-            continue
-
-        old_to_new_names, new_text = varbert_api.predict_variable_names(function)
-        if old_to_new_names:
-            total_suggested_funcs += 1
-            total_suggested_vars += len(old_to_new_names)
-            dec_interface.rename_local_variables_by_names(function, old_to_new_names)
-
-    _l.info(f"Suggested names for {total_suggested_vars} variables in {total_suggested_funcs} functions.")
-    # make sure things are destroyed
-    del varbert_api, dec_interface
 
