@@ -1,7 +1,6 @@
 import re
 import json
 import logging
-import importlib.resources
 from pathlib import Path
 
 import torch
@@ -28,6 +27,7 @@ from transformers import (
     RobertaTokenizer,
 )
 from transformers.activations import gelu
+from libbs.plugin_installer import PluginInstaller
 
 logger = logging.getLogger(__name__)
 VAR_SIZE = 2
@@ -39,7 +39,7 @@ class VarBERTInterface:
         if decompiler not in SUPPORTED_MODELS:
             decompiler = SUBSTITUTE_DECOMPILER_MODEL
 
-        self.model_base_dir = Path(str(importlib.resources.files("varbert"))).joinpath(f"models/{decompiler}").absolute()
+        self.model_base_dir = PluginInstaller.find_pkg_files("varbert") / "models" / decompiler
         if not self.model_base_dir.exists() or not self.model_base_dir.is_dir():
             raise Exception(f"Model directory {self.model_base_dir} does not exist for the decompiler "
                             f"{decompiler}. Please run `varbert install`.")
