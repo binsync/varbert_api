@@ -3,6 +3,8 @@ The Variable Annotation Recommendation Model (VARModel) is the Python library fo
 Using VARModel, you can use our local model to predict variable names for your decompiled code.
 Specialized models exist for IDA Pro and Ghidra, but can be used on any decompiler. 
 
+![](./assets/varbert.png)
+
 This project is for providing an API and CLI interface into the VarBERT models, but if you would like to use these
 models directly in your decompiler, with an integrated UI, use the [DAILA](https://github.com/mahaloz/DAILA) project.
 VARModel comes bundled with DAILA, so you do not need to install VARModel if you are using DAILA.
