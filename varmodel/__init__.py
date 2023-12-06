@@ -1,4 +1,4 @@
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 import importlib.resources
 import tarfile
@@ -7,11 +7,9 @@ import urllib.request
 import hashlib
 import math
 import platform
-from typing import Optional, List
 import shutil
 
 from tqdm import tqdm
-from libbs.api import DecompilerInterface
 from libbs.decompilers import GHIDRA_DECOMPILER, IDA_DECOMPILER
 
 # initialize logging for the entire project
