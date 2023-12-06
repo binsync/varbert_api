@@ -3,7 +3,7 @@ import tempfile
 from datetime import datetime
 
 timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-_, tempfilename = tempfile.mkstemp(prefix="varmodel" + f'.{timestamp}', suffix='.log')
+_, tempfilename = tempfile.mkstemp(prefix="varbert" + f'.{timestamp}', suffix='.log')
 
 default_config = {
     "version": 1,
@@ -37,7 +37,7 @@ default_config = {
         }
     },
     'loggers': {
-        'varmodel': {
+        'varbert': {
             'handlers': ["console", "local_file_handler"],
             'level': 'INFO',
             'propagate': False
@@ -50,7 +50,7 @@ class Loggers:
     """
     Logger Manager.
     """
-    IN_SCOPE_LOGGERS = ('varmodel',)
+    IN_SCOPE_LOGGERS = ('varbert',)
 
     def __init__(self):
         self._loggers = {}

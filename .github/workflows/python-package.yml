@@ -32,6 +32,6 @@ jobs:
     - name: Test with pytest
       run: |
         # TODO: add install of models to test when we go public
-        varmodel --help
+        varbert --help
         # TODO: uncomment when we go public
         # pytest tests/tests.py

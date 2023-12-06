@@ -2,8 +2,8 @@ import argparse
 import logging
 import sys
 
-import varmodel
-from varmodel import SUPPORTED_MODELS, VariableRenamingAPI, install_model
+import varbert
+from varbert import SUPPORTED_MODELS, VariableRenamingAPI, install_model
 from libbs.decompilers import IDA_DECOMPILER
 
 
@@ -19,7 +19,7 @@ def main():
     parser.add_argument("-p", "--predict", action="store_true", help="Predict variable names for a function over stdin and write out the resulting decompilation over stdout")
     parser.add_argument("--decompiler", type=str, choices=SUPPORTED_MODELS, help="Decompiler to use for prediction. If not specified, IDA Pro will be used.", default=IDA_DECOMPILER)
     parser.add_argument("--reinstall", action="store_true", default=False, help="Re-download and reinstall the models")
-    parser.add_argument("-v", "--version", action="version", version=f"VARModel {varmodel.__version__}")
+    parser.add_argument("-v", "--version", action="version", version=f"VarBERT {varbert.__version__}")
     args = parser.parse_args()
 
     if args.download_models is not None:
