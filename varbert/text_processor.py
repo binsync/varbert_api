@@ -1,6 +1,7 @@
 import re
 import os
 import logging
+import time
 from collections import defaultdict
 import random, string
 from typing import Optional, Dict, Tuple
@@ -93,6 +94,8 @@ class DecompilationTextProcessor:
 
         # revert to the original names in the decomp
         if self._decompiler.supports_undo:
+            # XXX: possible race conditions here
+            time.sleep(0.5)
             self._decompiler.undo()
         else:
             self._decompiler.rename_local_variables_by_names(self._func, tokenized_name_to_og_name)
