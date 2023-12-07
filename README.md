@@ -73,6 +73,10 @@ You should follow the instructions on the DAILA repo to install DAILA, but it's 
 pip3 install dailalib && daila --install
 ```
 
+You can find a demo of VarBERT running inside DAILA below:
+
+[![VarBERT Demo](https://img.youtube.com/vi/nUazQm8sFL8/0.jpg)](https://youtu.be/nUazQm8sFL8 "DAILA v2.1.4: Renaming variables with local VarBERT model")
+
 ## Citing 
 If you use VarBERT in your research, please cite our paper:
 ```
