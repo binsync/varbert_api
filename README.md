@@ -1,8 +1,8 @@
 # VarBERT API
 The VarBERT API is a Python library to access and use the latest models from the S&P 2024 work 
-[""Len or index or count, anything but v1": Predicting Variable Names in Decompilation Output with Transfer Learning"](), featuring VarBERT. 
+[""Len or index or count, anything but v1": Predicting Variable Names in Decompilation Output with Transfer Learning"](https://www.atipriya.com/files/papers/varbert_oakland24.pdf), featuring VarBERT. 
 VarBERT is a BERT-based model that predicts variable names for decompiled code.
-To train new models and understand the pipeline, see the [VarBERT paper repo]().
+To train new models and understand the pipeline, see the [VarBERT paper repo](https://github.com/sefcom/VarBERT).
 Specialized models exist for IDA Pro and Ghidra, but can be used on any decompiler. 
 
 <p align="center">
