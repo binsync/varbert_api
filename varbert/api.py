@@ -42,15 +42,16 @@ class VariableRenamingAPI(AIAPI):
         :param remove_bad_names:    Removes names that are duplicates or decompiler generated
         :return: (dict of old name to new name, renamed code)
         """
+        self.info(f"Predicting for function {function}...")
         # sanity checks
         if function is None and decompilation_text is None:
             raise ValueError("Must provide either a Function or decompilation text.")
         if function:
             if not function.args and not function.stack_vars:
-                _l.debug(f"{function} has no arguments or stack variables to predict names for.")
+                self.debug(f"{function} has no arguments or stack variables to predict names for.")
                 return {}, ""
             if function.size < self._min_func_size:
-                _l.debug(f"{function} is smaller than min size of {self._min_func_size} bytes.")
+                self.debug(f"{function} is smaller than min size of {self._min_func_size} bytes.")
                 return {}, ""
         # can be None because of the delay init
         if self._model_interface is None:
@@ -76,7 +77,7 @@ class VariableRenamingAPI(AIAPI):
             predict_for_decompiler_generated_vars=False
         )
         if not orig_name_2_popular_name:
-            _l.warning(f"Unable to predict any names for function {function}")
+            self.warning(f"Unable to predict any names for function {function}")
 
         if remove_bad_names:
             name_pairs = list()
@@ -93,7 +94,7 @@ class VariableRenamingAPI(AIAPI):
             }
 
         # check after filtering
-        _l.info(f"Predicted {len(orig_name_2_popular_name)} new names for function {function}")
+        self.info(f"Predicted {len(orig_name_2_popular_name)} new names for function {function}")
         return orig_name_2_popular_name, renamed_code
 
     @AIAPI.requires_function
@@ -136,3 +137,24 @@ class VariableRenamingAPI(AIAPI):
         # make sure things are destroyed
         del varbert, dec_interface
 
+    #
+    # special printers for decompiler proxying (if available)
+    #
+
+    def info(self, msg):
+        if self._dec_interface:
+            self._dec_interface.info(msg)
+        else:
+            _l.info(msg)
+
+    def debug(self, msg):
+        if self._dec_interface:
+            self._dec_interface.debug(msg)
+        else:
+            _l.debug(msg)
+
+    def warning(self, msg):
+        if self._dec_interface:
+            self._dec_interface.warning(msg)
+        else:
+            _l.warning(msg)
