@@ -7,7 +7,7 @@ import random, string
 from typing import Optional, Dict, Tuple
 
 from libbs.api import DecompilerInterface
-from libbs.data import Function
+from libbs.artifacts import Function
 
 _l = logging.getLogger(__name__)
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")

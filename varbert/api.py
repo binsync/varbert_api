@@ -3,7 +3,7 @@ from typing import Optional, Dict, Tuple, List
 
 from dailalib.api import AIAPI
 from libbs.api import DecompilerInterface
-from libbs.data import Function
+from libbs.artifacts import Function
 from tqdm import tqdm
 
 from .text_processor import DecompilationTextProcessor
