@@ -113,7 +113,7 @@ class VariableRenamingAPI(AIAPI):
         """
         Standardized function for predicting names for many functions in DAILA interfaces.
         """
-        dec_interface = DecompilerInterface.discover_interface(force_decompiler=decompiler)
+        dec_interface = DecompilerInterface.discover(force_decompiler=decompiler)
         varbert = VariableRenamingAPI(decompiler_interface=dec_interface)
         func_addrs = func_addrs if func_addrs else dec_interface.functions
 
