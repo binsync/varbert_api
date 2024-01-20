@@ -116,6 +116,7 @@ class VariableRenamingAPI(AIAPI):
         dec_interface = DecompilerInterface.discover(force_decompiler=decompiler)
         varbert = VariableRenamingAPI(decompiler_interface=dec_interface)
         func_addrs = func_addrs if func_addrs else dec_interface.functions
+        func_addrs = [dec_interface.art_lifer.lift_addr(addr) for addr in func_addrs]
 
         # grab real functions, which require decompilation, and predict names for them
         total_suggested_funcs = 0
