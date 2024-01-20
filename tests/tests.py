@@ -3,7 +3,7 @@ import sys
 from typing import Dict
 
 from varbert import VariableRenamingAPI
-from yodalib.data import Function, FunctionArgument, FunctionHeader, StackVariable
+from libbs.artifacts import Function, FunctionArgument, FunctionHeader, StackVariable
 
 
 def function_with_new_names(function: Function, new_names: Dict[str, str]):
