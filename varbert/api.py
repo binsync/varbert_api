@@ -95,7 +95,7 @@ class VariableRenamingAPI(AIAPI):
         else:
             # rewrite decompiled based names
             orig_name_2_popular_name = {
-                k: v.replace(" /*decompiler*/", "") for k, v in orig_name_2_popular_name.items()
+                k: v.replace(" /*decompiler*/", "_dec") for k, v in orig_name_2_popular_name.items()
             }
 
         # check after filtering
