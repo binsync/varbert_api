@@ -98,13 +98,13 @@ class VariableRenamingAPI(AIAPI):
         return orig_name_2_popular_name, renamed_code
 
     @AIAPI.requires_function
-    def query_model(self, *args, function=None, dec_text=None, use_dec=True, **kwargs) -> Tuple[Dict[str, str], str]:
+    def query_model(self, function=None, dec_text=None, use_dec=True, *args, **kwargs) -> Tuple[Dict[str, str], str]:
         """
         Standardized function for querying the model in DAILA interfaces.
         """
-        old_to_new_vars, renamed_code = self.predict_variable_names(function=function, decompilation_text=dec_text, use_decompiler=use_dec)
+        old_to_new_vars, renamed_code = self.predict_variable_names(function=function, decompilation_text=dec_text, use_decompiler=use_dec, *args, **kwargs)
         if use_dec and old_to_new_vars:
-            self._dec_interface.rename_local_variables_by_names(function, old_to_new_vars)
+            self._dec_interface.rename_local_variables_by_names(function, old_to_new_vars, *args, **kwargs)
 
         return old_to_new_vars, renamed_code
 
