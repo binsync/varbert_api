@@ -74,7 +74,7 @@ class VariableRenamingAPI(AIAPI):
 
         orig_name_2_popular_name, renamed_code = preprocessor.generate_popular_names(
             processed_code, func_args, scores, score_origins,
-            predict_for_decompiler_generated_vars=False
+            predict_for_decompiler_generated_vars=not remove_bad_names
         )
         if not orig_name_2_popular_name:
             self.warning(f"Unable to predict any names for function {function}")
@@ -91,6 +91,11 @@ class VariableRenamingAPI(AIAPI):
             # remove decompiler based names
             orig_name_2_popular_name = {
                 k: v for k, v in name_pairs if "/*decompiler*/" not in v
+            }
+        else:
+            # rewrite decompiled based names
+            orig_name_2_popular_name = {
+                k: v.replace(" /*decompiler*/", "_dec") for k, v in orig_name_2_popular_name.items()
             }
 
         # check after filtering
