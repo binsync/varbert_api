@@ -93,9 +93,9 @@ class VariableRenamingAPI(AIAPI):
                 k: v for k, v in name_pairs if "/*decompiler*/" not in v
             }
         else:
-            # rewrite decompiled based names
+            # rewrite decompiled based names, remove the comment
             orig_name_2_popular_name = {
-                k: v.replace(" /*decompiler*/", "_dec") for k, v in orig_name_2_popular_name.items()
+                k: v.replace(" /*decompiler*/", "") for k, v in orig_name_2_popular_name.items()
             }
 
         # check after filtering
