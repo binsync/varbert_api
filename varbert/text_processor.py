@@ -89,7 +89,12 @@ class DecompilationTextProcessor:
         # replace all original names with tmp tokenized names
         self._decompiler.rename_local_variables_by_names(self._func, og_name_to_tokenized_name)
         # get the decomp, fix the tmp tokens
-        tokenized_dec_text = self._decompiler.decompile(self._func.addr)
+        tokenized_decomp = self._decompiler.decompile(self._func.addr)
+        if tokenized_decomp is None:
+            _l.error("Decompiler failed to decompile function.")
+            return
+
+        tokenized_dec_text = tokenized_decomp.text
         tokenized_dec_text = tokenized_dec_text.replace(tmp_token, "@@")
 
         # revert to the original names in the decomp

@@ -20,8 +20,8 @@ class VariableRenamingAPI(AIAPI):
         ) if not self._delay_init else None
 
     def predict_variable_names(
-            self, function: Function = None, decompilation_text: Optional[str] = None, use_decompiler=True,
-            remove_bad_names=True
+        self, function: Function = None, decompilation_text: Optional[str] = None, use_decompiler=True,
+        remove_bad_names=True, **kwargs
     ) -> Tuple[Dict[str, str], str]:
         """
         Predict variable names for a function or decompilation text. You can use this function in two ways:
@@ -61,7 +61,10 @@ class VariableRenamingAPI(AIAPI):
             if not use_decompiler:
                 raise ValueError("Must provide decompilation text if not using decompiler")
 
-            decompilation_text = self._dec_interface.decompile(function.addr)
+            decomp = self._dec_interface.decompile(function.addr)
+            if decomp is None or not decomp.text:
+                raise ValueError(f"Unable to decompile function {function}")
+            decompilation_text = decomp.text
 
         # preprocess text for training
         preprocessor = DecompilationTextProcessor(
