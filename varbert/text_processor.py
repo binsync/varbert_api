@@ -19,6 +19,8 @@ class DecompilationTextProcessor:
         self._decompiler = decompiler
         self._func = func
 
+        self.failed = False
+
         # updated in process_code
         self.processed_code = raw_code
         # TODO: this actually needs to be disabled for now because Function does not handle register variables
@@ -83,6 +85,11 @@ class DecompilationTextProcessor:
         # refresh the decompiled obj backend
         self._func.dec_obj = self._decompiler.get_decompilation_object(self._func)
         original_names = self._decompiler.local_variable_names(self._func)
+        if not original_names:
+            self._decompiler.error(f"No variable names (local or args) found in decompiled function {self._func} for renaming.")
+            self.failed = True
+            return
+
         og_name_to_tokenized_name = self._tokenize_names(original_names, token=tmp_token)
         tokenized_name_to_og_name = {v: k for k, v in og_name_to_tokenized_name.items()}
 
