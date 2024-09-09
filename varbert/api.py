@@ -67,6 +67,9 @@ class VariableRenamingAPI(AIAPI):
         preprocessor = DecompilationTextProcessor(
             decompilation_text, func=function, decompiler=self._dec_interface if use_decompiler else None
         )
+        if preprocessor.failed:
+            return {}, ""
+
         processed_code, func_args = preprocessor.processed_code, preprocessor.func_args
         scores, score_origins = self._model_interface.process(processed_code)
         if scores is None:
