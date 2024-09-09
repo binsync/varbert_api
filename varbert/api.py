@@ -47,11 +47,8 @@ class VariableRenamingAPI(AIAPI):
         if function is None and decompilation_text is None:
             raise ValueError("Must provide either a Function or decompilation text.")
         if function:
-            if not function.args and not function.stack_vars:
-                self.debug(f"{function} has no arguments or stack variables to predict names for.")
-                return {}, ""
             if function.size < self._min_func_size:
-                self.debug(f"{function} is smaller than min size of {self._min_func_size} bytes.")
+                self.error(f"{function} is smaller than min size of {self._min_func_size} bytes.")
                 return {}, ""
         # can be None because of the delay init
         if self._model_interface is None:
