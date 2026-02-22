@@ -107,7 +107,7 @@ class VarBERTInterface:
             str(self.model_base_dir),
             avar_vocab_size = self.vocab_size,
             from_tf=False,
-            config=config            
+            config=config
         )
 
         model.to(device)
@@ -124,13 +124,16 @@ class VarBERTInterface:
         words = text.replace("\n", " ").split(" ")
         r = []
         for w in words:
-            m = re.search(r"@@[^\s@]+@@[^\s@]+@@", w)
-            if m is not None:
-                if m.start() > 0:
-                    r.append(w[: m.start()])
-                r.append(w[m.start(): m.end()])
-                if m.end() < len(w):
-                    r.append(w[m.end():])
+            matches = list(re.finditer(r"@@[^\s@]+@@[^\s@]+@@", w))
+            if matches:
+                pos = 0
+                for m in matches:
+                    if m.start() > pos:
+                        r.append(w[pos: m.start()])
+                    r.append(w[m.start(): m.end()])
+                    pos = m.end()
+                if pos < len(w):
+                    r.append(w[pos:])
             else:
                 r.append(w)
         r = [w for w in r if len(w) > 0]
@@ -206,7 +209,7 @@ class VarBERTInterface:
                     tpwords.append(vocab[t])
                     towords.append(vocab[t])
                     pos += 1
-        
+
         assert len(tpwords) == len(towords)
         assert None not in tpwords
         assert None not in towords
@@ -411,4 +414,3 @@ MODEL_CLASSES = {
     "distilbert": (DistilBertConfig, DistilBertForMaskedLM, DistilBertTokenizer),
     "camembert": (CamembertConfig, CamembertForMaskedLM, CamembertTokenizer),
 }
-
