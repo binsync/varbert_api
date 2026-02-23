@@ -107,7 +107,7 @@ class VarBERTInterface:
             str(self.model_base_dir),
             avar_vocab_size = self.vocab_size,
             from_tf=False,
-            config=config            
+            config=config
         )
 
         model.to(device)
@@ -116,7 +116,7 @@ class VarBERTInterface:
     @staticmethod
     def create_inputs_for_model(code_txt, tokenizer):
         input_ids = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(code_txt))
-        input_ids = tokenizer.build_inputs_with_special_tokens(input_ids)
+        input_ids = [tokenizer.bos_token_id] + input_ids + [tokenizer.eos_token_id]
         return torch.tensor(input_ids, dtype=torch.long)
 
     @staticmethod
@@ -124,13 +124,16 @@ class VarBERTInterface:
         words = text.replace("\n", " ").split(" ")
         r = []
         for w in words:
-            m = re.search(r"@@[^\s@]+@@[^\s@]+@@", w)
-            if m is not None:
-                if m.start() > 0:
-                    r.append(w[: m.start()])
-                r.append(w[m.start(): m.end()])
-                if m.end() < len(w):
-                    r.append(w[m.end():])
+            matches = list(re.finditer(r"@@[^\s@]+@@[^\s@]+@@", w))
+            if matches:
+                pos = 0
+                for m in matches:
+                    if m.start() > pos:
+                        r.append(w[pos: m.start()])
+                    r.append(w[m.start(): m.end()])
+                    pos = m.end()
+                if pos < len(w):
+                    r.append(w[pos:])
             else:
                 r.append(w)
         r = [w for w in r if len(w) > 0]
@@ -206,7 +209,7 @@ class VarBERTInterface:
                     tpwords.append(vocab[t])
                     towords.append(vocab[t])
                     pos += 1
-        
+
         assert len(tpwords) == len(towords)
         assert None not in tpwords
         assert None not in towords
@@ -280,7 +283,7 @@ class VarBERTInterface:
         # _code = "\n".join(_code_lines)
 
         input_ids = self.preprocess_word_mask(_code, tokenizer)[0]
-        input_ids_with_special_tokens = tokenizer.build_inputs_with_special_tokens(input_ids)
+        input_ids_with_special_tokens = [tokenizer.bos_token_id] + input_ids + [tokenizer.eos_token_id]
         if len(input_ids_with_special_tokens) < 800:
             # padding
             padded_input_ids = input_ids_with_special_tokens[:-1] + [1] * 800 + [2]
@@ -411,4 +414,3 @@ MODEL_CLASSES = {
     "distilbert": (DistilBertConfig, DistilBertForMaskedLM, DistilBertTokenizer),
     "camembert": (CamembertConfig, CamembertForMaskedLM, CamembertTokenizer),
 }
-
